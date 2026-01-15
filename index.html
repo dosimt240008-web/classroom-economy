@@ -1,0 +1,1701 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>우리반 교실경제</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --border:#e7e7e7;
+      --muted:#6b7280;
+      --text:#111827;
+      --shadow: 0 8px 24px rgba(0,0,0,.06);
+      --radius: 14px;
+      --sidebarW: 230px;
+      --accent: #2563eb;
+      --soft: #eff6ff;
+      --danger:#b00020;
+      --ok:#0b7;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color:var(--text);
+      background: #f7f7f8;
+    }
+
+    /* Layout */
+    .app{ display:flex; min-height:100vh; }
+    .sidebar{
+      width: var(--sidebarW);
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow:auto;
+    }
+    .content{ flex:1; padding: 20px; overflow:auto; }
+
+    /* Brand */
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      padding:10px 10px 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .logo{
+      width:34px;height:34px;border-radius:10px;
+      display:grid;place-items:center;
+      background: #eef2ff;
+      border:1px solid #dbeafe;
+      font-weight:800;
+      color:#1d4ed8;
+    }
+    .brand h1{ font-size:14px; margin:0; line-height:1.1; }
+    .brand p{ margin:2px 0 0; font-size:12px; color: var(--muted); }
+
+    /* Sidebar menu */
+    .menu{ display:flex; flex-direction:column; gap:6px; margin-top: 10px; }
+    .menu button{
+      width:100%;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 12px;
+      padding:10px 10px;
+      text-align:left;
+      cursor:pointer;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      transition:.15s;
+      font-size:14px;
+    }
+    .menu button:hover{ border-color:#d1d5db; }
+    .menu button.active{
+      border-color: #bfdbfe;
+      background:var(--soft);
+      color:#1d4ed8;
+    }
+    .menu button:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      background:#fafafa;
+    }
+
+    /* Common UI */
+    .tag{
+      font-size:11px;
+      color:var(--muted);
+      border:1px solid var(--border);
+      padding:2px 8px;
+      border-radius:999px;
+      background:#fff;
+      white-space:nowrap;
+    }
+    .tag.ok{ color:var(--ok); border-color:#bbf7d0; background:#f0fdf4; }
+    .tag.bad{ color:var(--danger); border-color:#fecaca; background:#fef2f2; }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      margin-bottom: 14px;
+    }
+    .topbar .title{ margin:0; font-size:18px; }
+    .topbar .subtitle{ margin:4px 0 0; color:var(--muted); font-size:13px; }
+    .statusline{
+      text-align:right;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-end;
+    }
+
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    .grid{ display:grid; gap:12px; }
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .card.flat{ box-shadow:none; }
+    .card h3,.card h4{ margin: 0 0 10px; font-size: 16px; }
+    .muted{ color:var(--muted); font-size: 13px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    input,select,button{
+      font-size: 15px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    input,select{ min-height:42px; }
+    button{
+      cursor:pointer;
+      background:#111827;
+      color:#fff;
+      border-color:#111827;
+    }
+    button.secondary{
+      background:#fff;
+      color:#111827;
+      border-color: var(--border);
+    }
+    button.ghost{
+      background:#fff;
+      color:#111827;
+      border-color: var(--border);
+    }
+    button:disabled{ opacity:.5; cursor:not-allowed; }
+
+    table{ width:100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px 8px; text-align:left; font-size:14px; }
+    th { color:#374151; font-weight:600; background:#fafafa; }
+    .right{ text-align:right; }
+
+    .pill{
+      display:inline-block;
+      padding:2px 8px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      font-size:12px;
+      color:#444;
+      background:#fff;
+    }
+
+    /* Tabs */
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .tab{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 999px;
+      padding:8px 12px;
+      cursor:pointer;
+      font-size:14px;
+      color:#111827;
+    }
+    .tab.active{
+      border-color:#bfdbfe;
+      background:var(--soft);
+      color:#1d4ed8;
+      font-weight:600;
+    }
+    .tabpanel{ display:none; }
+    .tabpanel.active{ display:block; }
+
+    /* Banner */
+    .banner{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: var(--radius);
+      padding:12px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      box-shadow: var(--shadow);
+      margin-bottom:12px;
+    }
+    .banner .left{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .banner .kicker{ font-size:12px; color:var(--muted); }
+    .banner .main{ font-size:14px; }
+    .banner.open{
+      border-color:#bbf7d0;
+      background:#f0fdf4;
+    }
+    .banner.closed{
+      border-color:#fecaca;
+      background:#fef2f2;
+    }
+
+    /* Responsive */
+    @media (max-width: 920px){
+      .app{ flex-direction:column; }
+      .sidebar{
+        width:100%;
+        height:auto;
+        position:relative;
+        border-right:none;
+        border-bottom:1px solid var(--border);
+      }
+      .content{ padding: 14px; }
+      .menu{ flex-direction:row; flex-wrap:wrap; }
+      .menu button{ width:auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Left -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">₩</div>
+      <div>
+        <h1>우리반 교실경제</h1>
+        <p>포인트 · 쿠폰 · 직업 · 세금 · 주식</p>
+      </div>
+    </div>
+
+    <div class="menu">
+      <button data-view="view-setup" class="active">
+        <span>🔧 설정</span><span class="tag" id="tagConnected">연결 전</span>
+      </button>
+      <button data-view="view-login">
+        <span>👩‍🎓 학생 로그인</span><span class="tag" id="tagStudent">미로그인</span>
+      </button>
+      <button data-view="view-student" id="btnStudentDash" disabled>
+        <span>🏫 학생 대시보드</span><span class="tag" id="tagBal">-</span>
+      </button>
+      <button data-view="view-teacher">
+        <span>👩‍🏫 교사 모드</span><span class="tag" id="tagTeacher">닫힘</span>
+      </button>
+    </div>
+
+    <div class="card flat" style="margin-top:12px;">
+      <div class="muted" style="display:flex;flex-direction:column;gap:6px;">
+        <div>• 주식: 교사가 거래장 OPEN/CLOSE</div>
+        <div>• 쿠폰: 부가세 5% → 공동기금</div>
+        <div>• 주급: 소득세 10% → 공동기금</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right -->
+  <main class="content">
+    <div class="topbar">
+      <div>
+        <h2 class="title" id="pageTitle">설정</h2>
+        <p class="subtitle" id="pageSub">Supabase 연결 정보를 저장하세요.</p>
+      </div>
+      <div class="statusline">
+        <div>연결: <b id="statusConn">OFF</b></div>
+        <div>거래장: <b id="statusMarket">-</b></div>
+      </div>
+    </div>
+
+    <!-- Setup -->
+    <section id="view-setup" class="view active">
+      <div class="grid">
+        <div class="card">
+          <h3>🔧 Supabase 설정</h3>
+          <p class="muted">Supabase 프로젝트의 URL과 anon key를 붙여넣고 저장하세요.</p>
+          <div class="row">
+            <input id="sbUrl" placeholder="SUPABASE_URL" style="min-width:320px; flex:1;">
+            <input id="sbKey" placeholder="SUPABASE_ANON_KEY" style="min-width:320px; flex:1;">
+            <button id="saveCfg">저장</button>
+            <button class="secondary" id="testConn">연결 테스트</button>
+          </div>
+          <p class="muted">※ 저장 후 새로고침(Ctrl+F5)하면 더 안정적입니다.</p>
+        </div>
+
+        <div class="card">
+          <h3>🧩 필요한 테이블 체크</h3>
+          <p class="muted">아래가 오류 없이 뜨면 기본 구조 OK.</p>
+          <button class="secondary" id="checkTables">테이블 점검</button>
+          <div id="tableCheckResult" class="muted" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Login -->
+    <section id="view-login" class="view">
+      <div class="grid">
+        <div class="card">
+          <h3>👩‍🎓 학생 로그인</h3>
+          <div class="row">
+            <input id="stuNo" type="number" placeholder="번호(예: 7)" />
+            <input id="stuPin" type="password" placeholder="PIN(예: 1234)" />
+            <button id="login">들어가기</button>
+            <button class="secondary" id="logout" style="display:none;">나가기</button>
+          </div>
+          <p id="loginMsg" class="muted"></p>
+        </div>
+
+        <div class="card">
+          <h3>ℹ️ 안내</h3>
+          <p class="muted">로그인 후 왼쪽 메뉴에서 <b>학생 대시보드</b>를 누르면 탭으로 정리된 화면이 나와요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Student -->
+    <section id="view-student" class="view">
+      <div id="marketBanner" class="banner">
+        <div class="left">
+          <div class="kicker">📈 주식 거래장 상태</div>
+          <div class="main" id="marketBannerText">불러오는 중...</div>
+        </div>
+        <span class="pill" id="marketBannerPill">-</span>
+      </div>
+
+      <!-- Student Tabs -->
+      <div class="tabs" id="studentTabs">
+        <button class="tab active" data-tab="stu-info">내 정보</button>
+        <button class="tab" data-tab="stu-stock">주식</button>
+        <button class="tab" data-tab="stu-coupon">쿠폰</button>
+        <button class="tab" data-tab="stu-ledger">기록</button>
+      </div>
+
+      <!-- Student Panels -->
+      <div id="stu-info" class="tabpanel active">
+        <div class="grid">
+          <div class="card">
+            <h3>📌 내 정보</h3>
+            <p><b id="stuName"></b> / 보유 포인트: <b id="stuBal"></b> / 내 직업: <b id="stuJob"></b></p>
+            <p class="muted">포인트는 쿠폰 구매·주식 거래에 사용해요.</p>
+          </div>
+
+          <div class="card">
+            <h3>🏦 공동기금(반 예산)</h3>
+            <p>현재 공동기금: <b id="treasuryBalStudent"></b></p>
+            <p class="muted">부가세/소득세 등은 공동기금으로 모여 공공재 쿠폰·행사에 사용해요.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="stu-stock" class="tabpanel">
+        <div class="grid">
+          <div class="card">
+            <h3>📈 주식 시장 <span class="pill">OPEN일 때만 거래</span></h3>
+            <p class="muted">현재 공시가로 즉시 매수/매도됩니다.</p>
+            <p id="marketStateStudent" class="muted"></p>
+
+            <div id="stockBoard" class="muted">불러오는 중...</div>
+
+            <div class="row" style="margin-top:10px;">
+              <select id="mStock"></select>
+              <input id="mShares" type="number" min="1" placeholder="수량(예: 3)" />
+              <button id="buyStock">매수</button>
+              <button id="sellStock" class="secondary">매도</button>
+            </div>
+            <p id="stockMsg" class="muted"></p>
+          </div>
+        </div>
+      </div>
+
+      <div id="stu-coupon" class="tabpanel">
+        <div class="grid">
+          <div class="card">
+            <h3>🛒 쿠폰 상점 <span class="pill">부가세 5% 자동</span></h3>
+            <div id="couponList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="stu-ledger" class="tabpanel">
+        <div class="grid">
+          <div class="card">
+            <h3>🧾 내 기록</h3>
+            <table>
+              <thead><tr><th>날짜</th><th>유형</th><th>변동</th><th>메모</th></tr></thead>
+              <tbody id="myLedger"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Teacher -->
+    <section id="view-teacher" class="view">
+      <div class="grid">
+        <div class="card">
+          <h3>👩‍🏫 교사 모드</h3>
+          <p class="muted">교사 PIN을 입력하면 관리 기능이 열립니다.</p>
+          <div class="row">
+            <input id="teacherPin" type="password" placeholder="교사 PIN" />
+            <button id="enterTeacher">교사 모드 열기</button>
+            <button class="secondary" id="exitTeacher" style="display:none;">교사 모드 닫기</button>
+          </div>
+          <p class="muted">※ 기본 교사 PIN은 <b>0000</b> 입니다. (아래 코드에서 꼭 바꾸세요)</p>
+        </div>
+
+        <div id="teacherArea" style="display:none;">
+          <!-- Teacher Tabs -->
+          <div class="tabs" id="teacherTabs" style="margin-top:12px;">
+            <button class="tab active" data-tab="t-economy">경제(공동기금/주급)</button>
+            <button class="tab" data-tab="t-jobs">직업</button>
+            <button class="tab" data-tab="t-points">포인트/쿠폰</button>
+            <button class="tab" data-tab="t-exchange">주식 거래소</button>
+          </div>
+
+          <!-- Teacher Panels -->
+          <div id="t-economy" class="tabpanel active">
+            <div class="grid">
+              <div class="card">
+                <h4>🏦 공동기금(반 예산)</h4>
+                <p>현재 공동기금: <b id="treasuryBalTeacher"></b></p>
+                <div class="row">
+                  <input id="treasuryAdjust" type="number" placeholder="조정(+/-) 예: 50 또는 -20" />
+                  <input id="treasuryMemo" placeholder="메모(예: 공공재 구매)" style="min-width:220px; flex:1;" />
+                  <button id="treasuryApply">반영</button>
+                </div>
+                <p class="muted">공공재 쿠폰/행사 비용 등을 공동기금에서 차감할 때 사용하세요.</p>
+              </div>
+
+              <div class="card">
+                <h4>💸 주급 지급 <span class="pill">소득세 10% 자동</span></h4>
+                <div class="row">
+                  <button id="runPayroll">이번 주 주급 일괄 지급</button>
+                  <button class="secondary" id="previewPayroll">미리보기(계산만)</button>
+                </div>
+                <div id="payrollPreview" class="muted" style="margin-top:10px;"></div>
+                <p class="muted">주급 지급 → 소득세(내림) → 공동기금 적립 → 장부 기록까지 자동 처리.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="t-jobs" class="tabpanel">
+            <div class="grid">
+              <div class="card">
+                <h4>💼 직업 배정</h4>
+                <div class="row">
+                  <select id="tStudentJob"></select>
+                  <select id="tJob"></select>
+                  <button id="assignJob">배정/변경</button>
+                  <button class="secondary" id="refreshJobs">새로고침</button>
+                </div>
+                <p class="muted">학생 1명당 1개 직업. 직업 목록은 Supabase <b>jobs</b> 테이블에서 수정 가능.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="t-points" class="tabpanel">
+            <div class="grid">
+              <div class="card">
+                <h4>포인트 지급/차감(수동)</h4>
+                <div class="row">
+                  <select id="tStudent"></select>
+                  <select id="tType">
+                    <option value="earn">지급(+)</option>
+                    <option value="adjust">조정(+/-)</option>
+                  </select>
+                  <input id="tAmount" type="number" placeholder="금액(예: 5)" />
+                  <input id="tMemo" placeholder="사유(예: 칠판 닦기)" style="min-width:220px; flex:1;" />
+                  <button id="tSubmit">반영</button>
+                </div>
+                <p class="muted">조정은 음수도 입력 가능(예: -3).</p>
+              </div>
+
+              <div class="card">
+                <h4>쿠폰 추가</h4>
+                <div class="row">
+                  <input id="cTitle" placeholder="쿠폰명" />
+                  <input id="cPrice" type="number" placeholder="가격" />
+                  <input id="cDesc" placeholder="설명" style="min-width:220px; flex:1;" />
+                  <button id="cAdd">추가</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="t-exchange" class="tabpanel">
+            <div class="grid">
+              <div class="card">
+                <h4>🏛️ 주식 거래소(교사용)</h4>
+                <p class="muted">학생은 <b>거래장 OPEN</b>일 때만 공시가로 거래합니다.</p>
+
+                <div class="row" style="margin-top:10px;">
+                  <button id="openMarket">거래장 열기</button>
+                  <button class="secondary" id="closeMarket">거래장 닫기</button>
+                  <input id="marketMsg" placeholder="학생에게 보일 안내(예: 쉬는시간 거래!)" style="min-width:260px; flex:1;" />
+                  <span class="muted">현재 상태: <b id="marketStateLabel">-</b></span>
+                </div>
+
+                <hr style="border:none;border-top:1px solid #eee;margin:12px 0;" />
+
+                <div class="row">
+                  <select id="exStock"></select>
+                  <input id="exPrice" type="number" min="1" placeholder="새 가격(예: 28)" />
+                  <input id="exNote" placeholder="메모(예: 실적 발표, 이슈)" style="min-width:220px; flex:1;" />
+                  <button id="publishPrice">가격 공시</button>
+                  <button class="secondary" id="refreshExchange">새로고침</button>
+                </div>
+
+                <div class="row" style="margin-top:10px;">
+                  <input id="newSymbol" placeholder="심볼(예: A)" style="width:120px;" />
+                  <input id="newName" placeholder="종목명(예: 도심에너지)" style="min-width:220px; flex:1;" />
+                  <input id="newDesc" placeholder="설명(선택)" style="min-width:220px; flex:1;" />
+                  <input id="newInitPrice" type="number" min="1" placeholder="초기가격(예: 20)" style="width:160px;" />
+                  <button id="addStock">종목 추가</button>
+                </div>
+
+                <p class="muted">종목을 숨기려면 Supabase에서 <b>stocks.is_active = false</b>로 변경하세요.</p>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- teacherArea -->
+      </div><!-- grid -->
+    </section>
+  </main>
+</div>
+
+<script>
+  // =========================================================
+  // (0) 기본 설정
+  // =========================================================
+  const cfgKey = "classEconomyCfg";
+  const teacherPinKey = "classEconomyTeacherPin";
+
+  let sb = null;
+  let me = null;        // students row
+  let teacherMode = false;
+
+  const VAT_RATE = 0.05;    // 쿠폰 부가세 5%
+  const INCOME_TAX = 0.10;  // 소득세 10%
+
+  // 거래장 상태(주식)
+  let marketOpen = false;
+  let marketMessage = "지금은 거래 시간이 아닙니다.";
+
+  // 주식 캐시
+  let stockCache = [];               // [{id,symbol,name}]
+  let latestPriceMap = new Map();    // stock_id -> price
+  let myHoldMap = new Map();         // stock_id -> {shares, avg_cost}
+
+  // =========================================================
+  // (A) 좌측 메뉴 / 뷰 전환
+  // =========================================================
+  const views = ["view-setup","view-login","view-student","view-teacher"];
+  const titles = {
+    "view-setup": ["설정", "Supabase 연결 정보를 저장하세요."],
+    "view-login": ["학생 로그인", "번호와 PIN으로 간단히 로그인합니다."],
+    "view-student": ["학생 대시보드", "탭으로 정리된 화면에서 기능을 확인해요."],
+    "view-teacher": ["교사 모드", "탭으로 관리 기능을 깔끔하게 분리했어요."]
+  };
+
+  function showView(id){
+    for (const v of views){
+      document.getElementById(v).classList.toggle("active", v===id);
+    }
+    document.querySelectorAll(".menu button").forEach(b=>{
+      b.classList.toggle("active", b.dataset.view === id);
+    });
+    document.getElementById("pageTitle").textContent = titles[id]?.[0] ?? "";
+    document.getElementById("pageSub").textContent = titles[id]?.[1] ?? "";
+  }
+
+  document.querySelectorAll(".menu button[data-view]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.dataset.view;
+      if (btn.disabled) return;
+      showView(id);
+    });
+  });
+
+  function setTag(elId, text, cls=null){
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove("ok","bad");
+    if (cls) el.classList.add(cls);
+  }
+
+  function setConnectedUI(on){
+    document.getElementById("statusConn").textContent = on ? "ON" : "OFF";
+    setTag("tagConnected", on ? "연결됨" : "연결 전", on ? "ok" : null);
+  }
+
+  function setStudentUI(){
+    setTag("tagStudent", me ? "로그인됨" : "미로그인", me ? "ok" : null);
+    document.getElementById("btnStudentDash").disabled = !me;
+    setTag("tagBal", me ? `${me.balance}P` : "-", me ? "ok" : null);
+  }
+
+  function setTeacherUI(){
+    setTag("tagTeacher", teacherMode ? "열림" : "닫힘", teacherMode ? "ok" : null);
+  }
+
+  function setMarketUI(){
+    document.getElementById("statusMarket").textContent = marketOpen ? "OPEN" : "CLOSED";
+  }
+
+  // =========================================================
+  // (B) Tabs (학생/교사)
+  // =========================================================
+  function setupTabs(containerId, defaultTabId){
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const buttons = container.querySelectorAll(".tab[data-tab]");
+    buttons.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const tabId = btn.dataset.tab;
+        activateTab(containerId, tabId);
+      });
+    });
+    if (defaultTabId) activateTab(containerId, defaultTabId);
+  }
+
+  function activateTab(containerId, tabId){
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll(".tab").forEach(b=>{
+      b.classList.toggle("active", b.dataset.tab === tabId);
+    });
+    // tabpanel은 전역에 있으니 id로 제어
+    // 같은 페이지에서 다른 탭셋이 있어도 서로 영향 주지 않도록
+    // 해당 container의 버튼들이 가리키는 패널만 토글
+    const targetIds = Array.from(container.querySelectorAll(".tab")).map(b=>b.dataset.tab);
+    targetIds.forEach(id=>{
+      const panel = document.getElementById(id);
+      if (panel) panel.classList.toggle("active", id === tabId);
+    });
+  }
+
+  // 최초 탭 연결
+  setupTabs("studentTabs", "stu-info");
+  // teacherTabs는 교사 모드 열릴 때 활성화(teacherArea가 display:none일 때도 문제없지만, 안전하게)
+  setupTabs("teacherTabs", "t-economy");
+
+  // 학생 대시보드로 들어갈 때 기본 탭은 내 정보로
+  function resetStudentTabs(){
+    activateTab("studentTabs", "stu-info");
+  }
+  // 교사 대시보드로 들어갈 때 기본 탭은 경제로
+  function resetTeacherTabs(){
+    activateTab("teacherTabs", "t-economy");
+  }
+
+  // =========================================================
+  // (1) Supabase 설정
+  // =========================================================
+  function loadCfg() {
+    const cfg = JSON.parse(localStorage.getItem(cfgKey) || "null");
+    if (cfg?.url && cfg?.key) {
+      document.getElementById("sbUrl").value = cfg.url;
+      document.getElementById("sbKey").value = cfg.key;
+      sb = window.supabase.createClient(cfg.url, cfg.key);
+      setConnectedUI(true);
+    } else {
+      setConnectedUI(false);
+    }
+  }
+
+  async function bootstrapAfterConnected() {
+    if (!sb) return;
+    await refreshTreasuryUI().catch(()=>{});
+    await refreshStockMarket().catch(()=>{});
+    await loadMarketState().catch(()=>{});
+    setMarketUI();
+    renderMarketBanner();
+  }
+
+  function saveCfg() {
+    const url = document.getElementById("sbUrl").value.trim();
+    const key = document.getElementById("sbKey").value.trim();
+    if (!url || !key) return alert("URL/KEY를 모두 입력하세요.");
+    localStorage.setItem(cfgKey, JSON.stringify({url, key}));
+    sb = window.supabase.createClient(url, key);
+    setConnectedUI(true);
+    alert("저장 완료! 이제 학생/교사 기능을 사용할 수 있어요.");
+    bootstrapAfterConnected();
+  }
+
+  function needSupabase() {
+    if (!sb) {
+      alert("먼저 Supabase URL/KEY를 저장해 주세요.");
+      showView("view-setup");
+      return false;
+    }
+    return true;
+  }
+
+  document.getElementById("saveCfg").onclick = saveCfg;
+
+  document.getElementById("testConn").onclick = async () => {
+    if (!needSupabase()) return;
+    try{
+      const { error } = await sb.from("market_state").select("id").eq("id",1).maybeSingle();
+      if (error) throw error;
+      alert("연결 OK!");
+    }catch(e){
+      alert("연결 실패: " + (e?.message || "알 수 없음"));
+    }
+  };
+
+  document.getElementById("checkTables").onclick = async () => {
+    if (!needSupabase()) return;
+    const out = document.getElementById("tableCheckResult");
+    out.textContent = "점검 중...";
+    const checks = [
+      ["students","students(id, student_no, pin, balance)"],
+      ["coupons","coupons(id, title, price, is_active)"],
+      ["ledger","ledger(id, student_id, type, amount, created_at)"],
+      ["treasury","treasury(id=1, balance)"],
+      ["jobs","jobs(id, title, weekly_wage, is_active)"],
+      ["student_jobs","student_jobs(student_id, job_id)"],
+      ["market_state","market_state(id=1, is_open, message)"],
+      ["stocks","stocks(id, symbol, name, is_active)"],
+      ["stock_prices","stock_prices(stock_id, price, effective_at)"],
+      ["holdings","holdings(student_id, stock_id, shares, avg_cost)"],
+      ["trades","trades(id, student_id, stock_id, side, shares, price)"]
+    ];
+    let html = "<div style='display:flex;flex-direction:column;gap:6px;'>";
+    for (const [tbl, hint] of checks){
+      try{
+        const { error } = await sb.from(tbl).select("*").limit(1);
+        if (error) throw error;
+        html += `<div>✅ <b>${tbl}</b> <span class="muted">(${hint})</span></div>`;
+      }catch(e){
+        html += `<div>❌ <b>${tbl}</b> <span class="muted">(${hint})</span><br/><span class="muted" style="color:#b00020;">${(e?.message||"에러")}</span></div>`;
+      }
+    }
+    html += "</div>";
+    out.innerHTML = html;
+  };
+
+  loadCfg();
+  setStudentUI();
+  setTeacherUI();
+  setMarketUI();
+
+  // =========================================================
+  // (2) 공동기금(treasury)
+  // =========================================================
+  async function getTreasury() {
+    const { data, error } = await sb.from("treasury").select("*").eq("id", 1).single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function addTreasury(delta, memo="") {
+    const t = await getTreasury();
+    const newBal = t.balance + delta;
+    if (newBal < 0) throw new Error("공동기금이 0 미만이 될 수 없어요.");
+
+    const { error: e1 } = await sb.from("treasury")
+      .update({ balance: newBal, updated_at: new Date().toISOString() })
+      .eq("id", 1);
+    if (e1) throw e1;
+
+    // ledger.student_id가 NOT NULL이면 여기서 에러가 날 수 있어요.
+    const { error: e2 } = await sb.from("ledger").insert({
+      student_id: null,
+      type: "treasury",
+      amount: delta,
+      memo: memo || (delta >= 0 ? "공동기금 적립" : "공동기금 사용"),
+      coupon_id: null
+    });
+    if (e2) throw e2;
+
+    return newBal;
+  }
+
+  async function refreshTreasuryUI() {
+    if (!sb) return;
+    try {
+      const t = await getTreasury();
+      const sEl = document.getElementById("treasuryBalStudent");
+      const tEl = document.getElementById("treasuryBalTeacher");
+      if (sEl) sEl.textContent = t.balance;
+      if (tEl) tEl.textContent = t.balance;
+    } catch (_) {}
+  }
+
+  // =========================================================
+  // (3) 학생 로그인/로그아웃
+  // =========================================================
+  document.getElementById("login").onclick = async () => {
+    if (!needSupabase()) return;
+
+    const no = Number(document.getElementById("stuNo").value);
+    const pin = document.getElementById("stuPin").value.trim();
+    if (!no || !pin) return;
+
+    const { data, error } = await sb
+      .from("students")
+      .select("*")
+      .eq("student_no", no)
+      .eq("pin", pin)
+      .maybeSingle();
+
+    if (error || !data) {
+      document.getElementById("loginMsg").textContent = "번호 또는 PIN이 틀렸어요.";
+      return;
+    }
+
+    me = data;
+    document.getElementById("loginMsg").textContent = "";
+    document.getElementById("logout").style.display = "inline-block";
+    setStudentUI();
+    await refreshStudent();
+    resetStudentTabs();
+    showView("view-student");
+  };
+
+  document.getElementById("logout").onclick = () => {
+    me = null;
+    document.getElementById("logout").style.display = "none";
+    document.getElementById("stuNo").value = "";
+    document.getElementById("stuPin").value = "";
+    document.getElementById("stockMsg").textContent = "";
+    setStudentUI();
+    showView("view-login");
+  };
+
+  async function getMyJobTitle(studentId) {
+    const { data: sj, error: e1 } = await sb.from("student_jobs").select("job_id").eq("student_id", studentId).maybeSingle();
+    if (e1) return "미배정";
+    if (!sj?.job_id) return "미배정";
+    const { data: job, error: e2 } = await sb.from("jobs").select("title").eq("id", sj.job_id).single();
+    if (e2) return "미배정";
+    return job.title || "미배정";
+  }
+
+  async function refreshStudent() {
+    if (!me) return;
+
+    const { data: fresh, error: e0 } = await sb.from("students").select("*").eq("id", me.id).single();
+    if (e0) return;
+    me = fresh;
+
+    document.getElementById("stuName").textContent = `${me.student_no}번 ${me.name}`;
+    document.getElementById("stuBal").textContent = me.balance;
+    document.getElementById("stuJob").textContent = await getMyJobTitle(me.id);
+
+    setStudentUI();
+    await refreshTreasuryUI();
+    await loadMarketState().catch(()=>{});
+    await refreshStockMarket().catch(()=>{});
+    await loadCoupons();
+    await loadMyLedger();
+  }
+
+  // =========================================================
+  // (4) 쿠폰 상점 (부가세 5% -> 공동기금)
+  // =========================================================
+  async function loadCoupons() {
+    const { data, error } = await sb
+      .from("coupons")
+      .select("*")
+      .eq("is_active", true)
+      .order("price", { ascending: true });
+
+    if (error) return;
+    const wrap = document.getElementById("couponList");
+    wrap.innerHTML = "";
+
+    data.forEach(c => {
+      const vat = Math.floor(c.price * VAT_RATE);
+      const total = c.price + vat;
+
+      const div = document.createElement("div");
+      div.className = "card flat";
+      div.innerHTML = `
+        <div class="row" style="justify-content:space-between; width:100%;">
+          <div style="flex:1; min-width:220px;">
+            <b>${c.title}</b>
+            <span class="muted"> (${c.price}P + 부가세 ${vat}P = ${total}P)</span><br/>
+            <span class="muted">${c.description || ""}</span>
+          </div>
+          <button ${!me ? "disabled" : ""}>구매</button>
+        </div>
+      `;
+      div.querySelector("button").onclick = () => buyCoupon(c);
+      wrap.appendChild(div);
+    });
+  }
+
+  async function buyCoupon(coupon) {
+    if (!me) return alert("먼저 로그인하세요.");
+
+    const vat = Math.floor(coupon.price * VAT_RATE);
+    const total = coupon.price + vat;
+
+    if (me.balance < total) return alert(`포인트가 부족해요! (필요: ${total}P)`);
+
+    const newBal = me.balance - total;
+    const { error: e1 } = await sb.from("students").update({ balance: newBal }).eq("id", me.id);
+    if (e1) return alert("구매 실패(잔액 업데이트 오류)");
+
+    const { error: e2 } = await sb.from("ledger").insert({
+      student_id: me.id,
+      type: "spend",
+      amount: -coupon.price,
+      memo: `쿠폰 구매: ${coupon.title}`,
+      coupon_id: coupon.id
+    });
+    if (e2) return alert("구매 실패(기록 오류)");
+
+    if (vat > 0) {
+      const { error: e3 } = await sb.from("ledger").insert({
+        student_id: me.id,
+        type: "tax",
+        amount: -vat,
+        memo: `부가세(5%): ${coupon.title}`,
+        coupon_id: coupon.id
+      });
+      if (e3) return alert("구매 실패(세금 기록 오류)");
+
+      try {
+        await addTreasury(vat, `부가세 적립: ${coupon.title}`);
+      } catch (e) {
+        alert("경고: 공동기금 적립에 실패했어요. 교사 모드에서 확인해 주세요.");
+      }
+    }
+
+    await refreshStudent();
+    alert("구매 완료!");
+  }
+
+  async function loadMyLedger() {
+    const { data, error } = await sb
+      .from("ledger")
+      .select("*")
+      .eq("student_id", me.id)
+      .order("created_at", { ascending: false })
+      .limit(60);
+
+    if (error) return;
+    const tbody = document.getElementById("myLedger");
+    tbody.innerHTML = "";
+    data.forEach(r => {
+      const tr = document.createElement("tr");
+      const d = new Date(r.created_at);
+      tr.innerHTML = `
+        <td>${d.toLocaleString()}</td>
+        <td>${r.type}</td>
+        <td>${r.amount}</td>
+        <td>${r.memo || ""}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // =========================================================
+  // (5) 교사 모드
+  // =========================================================
+  const DEFAULT_TEACHER_PIN = "0000"; // ✅ 꼭 바꾸세요
+  if (!localStorage.getItem(teacherPinKey)) localStorage.setItem(teacherPinKey, DEFAULT_TEACHER_PIN);
+
+  document.getElementById("enterTeacher").onclick = async () => {
+    if (!needSupabase()) return;
+    const pin = document.getElementById("teacherPin").value.trim();
+    const real = localStorage.getItem(teacherPinKey);
+    if (pin !== real) return alert("교사 PIN이 틀렸어요.");
+
+    teacherMode = true;
+    setTeacherUI();
+
+    document.getElementById("teacherArea").style.display = "block";
+    document.getElementById("exitTeacher").style.display = "inline-block";
+
+    await refreshTreasuryUI();
+    await loadMarketState().catch(()=>{});
+    await refreshStockMarket().catch(()=>{});
+
+    await loadStudentsDropdown();
+    await loadStudentsForJobAssign();
+    await loadJobsDropdown();
+
+    resetTeacherTabs();
+    showView("view-teacher");
+  };
+
+  document.getElementById("exitTeacher").onclick = () => {
+    teacherMode = false;
+    setTeacherUI();
+    document.getElementById("teacherArea").style.display = "none";
+    document.getElementById("exitTeacher").style.display = "none";
+  };
+
+  // 공동기금 수동 조정
+  document.getElementById("treasuryApply").onclick = async () => {
+    if (!teacherMode) return;
+    const delta = Number(document.getElementById("treasuryAdjust").value);
+    const memo = document.getElementById("treasuryMemo").value.trim();
+    if (!Number.isFinite(delta) || delta === 0) return alert("조정 금액을 입력하세요. (예: 50 또는 -20)");
+    try {
+      await addTreasury(delta, memo || "공동기금 수동 조정");
+      document.getElementById("treasuryAdjust").value = "";
+      document.getElementById("treasuryMemo").value = "";
+      await refreshTreasuryUI();
+      alert("공동기금 반영 완료!");
+    } catch (e) {
+      alert(e.message || "공동기금 반영 실패");
+    }
+  };
+
+  // 수동 포인트 지급/차감
+  async function loadStudentsDropdown() {
+    const { data, error } = await sb.from("students").select("*").order("student_no", { ascending: true });
+    if (error) return;
+    const sel = document.getElementById("tStudent");
+    sel.innerHTML = "";
+    data.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.student_no}번 ${s.name} (잔액 ${s.balance})`;
+      sel.appendChild(opt);
+    });
+  }
+
+  document.getElementById("tSubmit").onclick = async () => {
+    if (!teacherMode) return;
+    const sid = Number(document.getElementById("tStudent").value);
+    const type = document.getElementById("tType").value;
+    const amount = Number(document.getElementById("tAmount").value);
+    const memo = document.getElementById("tMemo").value.trim();
+    if (!sid || !amount) return alert("학생/금액을 입력하세요.");
+
+    const { data: s, error: e0 } = await sb.from("students").select("*").eq("id", sid).single();
+    if (e0) return alert("학생 조회 실패");
+
+    const newBal = s.balance + amount;
+    if (newBal < 0) return alert("잔액이 0 미만이 되도록 조정할 수 없어요.");
+
+    const { error: e1 } = await sb.from("students").update({ balance: newBal }).eq("id", sid);
+    if (e1) return alert("잔액 반영 실패");
+
+    const { error: e2 } = await sb.from("ledger").insert({
+      student_id: sid,
+      type: type,
+      amount: amount,
+      memo: memo || (amount > 0 ? "포인트 지급" : "포인트 차감")
+    });
+    if (e2) return alert("기록 실패");
+
+    await loadStudentsDropdown();
+    if (me?.id === sid) await refreshStudent();
+    alert("반영 완료!");
+  };
+
+  // 쿠폰 추가
+  document.getElementById("cAdd").onclick = async () => {
+    if (!teacherMode) return;
+    const title = document.getElementById("cTitle").value.trim();
+    const price = Number(document.getElementById("cPrice").value);
+    const desc = document.getElementById("cDesc").value.trim();
+    if (!title || !Number.isFinite(price)) return alert("쿠폰명/가격을 입력하세요.");
+
+    const { error } = await sb.from("coupons").insert({ title, price, description: desc });
+    if (error) return alert("추가 실패");
+
+    document.getElementById("cTitle").value = "";
+    document.getElementById("cPrice").value = "";
+    document.getElementById("cDesc").value = "";
+    if (me) await loadCoupons();
+    alert("쿠폰 추가 완료!");
+  };
+
+  // =========================================================
+  // (6) 직업 배정
+  // =========================================================
+  async function loadStudentsForJobAssign() {
+    const { data, error } = await sb.from("students").select("id,student_no,name").order("student_no", { ascending: true });
+    if (error) return;
+    const sel = document.getElementById("tStudentJob");
+    sel.innerHTML = "";
+    data.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.student_no}번 ${s.name}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  async function loadJobsDropdown() {
+    const { data, error } = await sb.from("jobs").select("id,title,weekly_wage,is_active").eq("is_active", true).order("weekly_wage", { ascending: false });
+    if (error) return;
+    const sel = document.getElementById("tJob");
+    sel.innerHTML = "";
+    data.forEach(j => {
+      const opt = document.createElement("option");
+      opt.value = j.id;
+      opt.textContent = `${j.title} (주급 ${j.weekly_wage}P)`;
+      sel.appendChild(opt);
+    });
+  }
+
+  document.getElementById("assignJob").onclick = async () => {
+    if (!teacherMode) return;
+    const student_id = Number(document.getElementById("tStudentJob").value);
+    const job_id = Number(document.getElementById("tJob").value);
+    if (!student_id || !job_id) return alert("학생/직업을 선택하세요.");
+
+    const { error } = await sb.from("student_jobs").upsert({
+      student_id,
+      job_id,
+      assigned_at: new Date().toISOString()
+    });
+    if (error) return alert("직업 배정 실패");
+
+    alert("직업 배정 완료!");
+    if (me?.id === student_id) await refreshStudent();
+  };
+
+  document.getElementById("refreshJobs").onclick = async () => {
+    if (!teacherMode) return;
+    await loadStudentsForJobAssign();
+    await loadJobsDropdown();
+    alert("새로고침 완료!");
+  };
+
+  // =========================================================
+  // (7) 주급 지급(일괄) + 소득세 10% -> 공동기금
+  // =========================================================
+  async function computePayrollRows() {
+    const { data: students, error: e1 } = await sb.from("students").select("id,student_no,name").order("student_no", { ascending: true });
+    if (e1) throw e1;
+
+    const { data: sj, error: e2 } = await sb.from("student_jobs").select("student_id,job_id");
+    if (e2) throw e2;
+
+    const { data: jobs, error: e3 } = await sb.from("jobs").select("id,title,weekly_wage").eq("is_active", true);
+    if (e3) throw e3;
+
+    const jobMap = new Map(jobs.map(j => [j.id, j]));
+    const sjMap = new Map(sj.map(x => [x.student_id, x.job_id]));
+    const citizen = jobs.find(j => j.title === "시민(기본)");
+
+    return students.map(s => {
+      const jobId = sjMap.get(s.id) ?? citizen?.id ?? null;
+      const job = jobId ? jobMap.get(jobId) : null;
+      const wage = job?.weekly_wage ?? 0;
+      const tax = Math.floor(wage * INCOME_TAX);
+      const net = wage - tax;
+      return {
+        student_id: s.id,
+        label: `${s.student_no}번 ${s.name}`,
+        job_title: job?.title ?? "미배정",
+        wage,
+        tax,
+        net
+      };
+    });
+  }
+
+  document.getElementById("previewPayroll").onclick = async () => {
+    if (!teacherMode) return;
+    try {
+      const rows = await computePayrollRows();
+      const totalWage = rows.reduce((a,r)=>a+r.wage,0);
+      const totalTax  = rows.reduce((a,r)=>a+r.tax,0);
+
+      const preview = rows.slice(0, 12)
+        .map(r => `${r.label} / ${r.job_title} / 주급 ${r.wage}P / 세금 ${r.tax}P / 실수령 ${r.net}P`)
+        .join("<br/>");
+
+      document.getElementById("payrollPreview").innerHTML =
+        `총 주급: <b>${totalWage}P</b>, 총 소득세: <b>${totalTax}P</b><br/><br/>` +
+        `<b>미리보기(상위 12명):</b><br/>${preview}` +
+        (rows.length > 12 ? "<br/>…(이하 생략)" : "");
+    } catch (e) {
+      alert(e.message || "미리보기 실패");
+    }
+  };
+
+  document.getElementById("runPayroll").onclick = async () => {
+    if (!teacherMode) return;
+    if (!confirm("이번 주 주급을 '일괄 지급'할까요? (취소 불가, 장부에 기록됨)")) return;
+
+    try {
+      const rows = await computePayrollRows();
+      const totalTax = rows.reduce((a,r)=>a+r.tax,0);
+
+      for (const r of rows) {
+        const { data: s, error: e0 } = await sb.from("students").select("balance").eq("id", r.student_id).single();
+        if (e0) throw e0;
+
+        const newBal = s.balance + r.net;
+        const { error: e1 } = await sb.from("students").update({ balance: newBal }).eq("id", r.student_id);
+        if (e1) throw e1;
+
+        if (r.wage > 0) {
+          const { error: e2 } = await sb.from("ledger").insert({
+            student_id: r.student_id,
+            type: "payroll",
+            amount: r.wage,
+            memo: `주급 지급 (${r.job_title})`
+          });
+          if (e2) throw e2;
+        }
+
+        if (r.tax > 0) {
+          const { error: e3 } = await sb.from("ledger").insert({
+            student_id: r.student_id,
+            type: "tax",
+            amount: -r.tax,
+            memo: `소득세(10%): 주급 ${r.wage}P`
+          });
+          if (e3) throw e3;
+        }
+
+        if (r.net !== 0) {
+          const { error: e4 } = await sb.from("ledger").insert({
+            student_id: r.student_id,
+            type: "earn",
+            amount: r.net,
+            memo: `실수령(주급-세금)`
+          });
+          if (e4) throw e4;
+        }
+      }
+
+      if (totalTax > 0) {
+        await addTreasury(totalTax, `소득세 적립(주급 일괄)`);
+      }
+
+      await refreshTreasuryUI();
+      await loadStudentsDropdown();
+      if (me) await refreshStudent();
+
+      alert("주급 지급 완료!");
+    } catch (e) {
+      alert(e.message || "주급 지급 실패");
+    }
+  };
+
+  // =========================================================
+  // (8) 주식: 거래장 상태(market_state)
+  // =========================================================
+  async function loadMarketState() {
+    const { data, error } = await sb.from("market_state").select("*").eq("id", 1).single();
+    if (error) throw error;
+    marketOpen = !!data.is_open;
+    marketMessage = data.message || "지금은 거래 시간이 아닙니다.";
+    renderMarketStateUI();
+    setMarketUI();
+    renderMarketBanner();
+  }
+
+  function renderMarketBanner(){
+    const banner = document.getElementById("marketBanner");
+    if (!banner) return;
+    banner.classList.remove("open","closed");
+    banner.classList.add(marketOpen ? "open" : "closed");
+    document.getElementById("marketBannerText").textContent =
+      marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
+    document.getElementById("marketBannerPill").textContent = marketOpen ? "OPEN" : "CLOSED";
+  }
+
+  function renderMarketStateUI() {
+    const st1 = document.getElementById("marketStateLabel");
+    const st2 = document.getElementById("marketStateStudent");
+    if (st1) st1.textContent = marketOpen ? "OPEN" : "CLOSED";
+    if (st2) st2.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
+
+    const buyBtn = document.getElementById("buyStock");
+    const sellBtn = document.getElementById("sellStock");
+    if (buyBtn) buyBtn.disabled = !marketOpen || !me;
+    if (sellBtn) sellBtn.disabled = !marketOpen || !me;
+  }
+
+  // =========================================================
+  // (9) 주식: 시세/보유/거래
+  // =========================================================
+  async function loadLatestPrices(stockIds) {
+    latestPriceMap.clear();
+    if (!stockIds.length) return;
+
+    const { data: prices, error } = await sb
+      .from("stock_prices")
+      .select("stock_id, price, effective_at")
+      .in("stock_id", stockIds)
+      .order("effective_at", { ascending: false });
+
+    if (error) throw error;
+
+    for (const p of prices) {
+      if (!latestPriceMap.has(p.stock_id)) latestPriceMap.set(p.stock_id, p.price);
+    }
+  }
+
+  async function loadMyHoldings() {
+    myHoldMap.clear();
+    if (!me) return;
+
+    const { data, error } = await sb
+      .from("holdings")
+      .select("stock_id, shares, avg_cost")
+      .eq("student_id", me.id);
+
+    if (error) throw error;
+
+    for (const h of data) myHoldMap.set(h.stock_id, h);
+  }
+
+  function renderStockSelectForStudent() {
+    const sel = document.getElementById("mStock");
+    if (!sel) return;
+    sel.innerHTML = "";
+    for (const s of stockCache) {
+      const price = latestPriceMap.get(s.id) ?? "-";
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.symbol} - ${s.name} (${price}P)`;
+      sel.appendChild(opt);
+    }
+  }
+
+  function renderStockSelectForTeacher() {
+    const sel = document.getElementById("exStock");
+    if (!sel) return;
+    sel.innerHTML = "";
+    for (const s of stockCache) {
+      const price = latestPriceMap.get(s.id) ?? "-";
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.symbol} - ${s.name} (현재 ${price}P)`;
+      sel.appendChild(opt);
+    }
+  }
+
+  function renderStockBoard() {
+    const el = document.getElementById("stockBoard");
+    if (!el) return;
+
+    if (!stockCache.length) {
+      el.innerHTML = `<span class="muted">등록된 종목이 없습니다. (교사 모드에서 종목 추가)</span>`;
+      return;
+    }
+
+    let html = `<table>
+      <thead><tr>
+        <th>심볼</th><th>종목</th><th class="right">현재가</th>
+        <th class="right">내 보유</th><th class="right">평단</th><th class="right">평가손익(참고)</th>
+      </tr></thead><tbody>`;
+
+    for (const s of stockCache) {
+      const price = latestPriceMap.get(s.id) ?? 0;
+      const h = myHoldMap.get(s.id) ?? { shares: 0, avg_cost: 0 };
+      const shares = h.shares ?? 0;
+      const avg = h.avg_cost ?? 0;
+      const pnl = shares > 0 ? (price - avg) * shares : 0;
+
+      html += `<tr>
+        <td>${s.symbol}</td>
+        <td>${s.name}</td>
+        <td class="right">${price}</td>
+        <td class="right">${shares}</td>
+        <td class="right">${avg}</td>
+        <td class="right">${pnl}</td>
+      </tr>`;
+    }
+
+    html += `</tbody></table>`;
+    el.innerHTML = html;
+  }
+
+  async function refreshStockMarket() {
+    if (!sb) return;
+
+    const { data: stocks, error: e1 } = await sb
+      .from("stocks")
+      .select("id, symbol, name, is_active")
+      .eq("is_active", true)
+      .order("symbol", { ascending: true });
+
+    if (e1) throw e1;
+
+    stockCache = stocks || [];
+    const ids = stockCache.map(x => x.id);
+
+    await loadLatestPrices(ids);
+    await loadMyHoldings().catch(()=>{});
+
+    renderStockBoard();
+    renderStockSelectForStudent();
+    renderStockSelectForTeacher();
+    renderMarketStateUI();
+    renderMarketBanner();
+  }
+
+  function getCurrentPrice(stockId) {
+    const p = latestPriceMap.get(stockId);
+    if (!p || p < 1) throw new Error("해당 종목의 가격이 공시되어 있지 않아요. (교사 모드에서 가격 공시 필요)");
+    return p;
+  }
+
+  async function buyStockNow(stockId, shares) {
+    if (!marketOpen) throw new Error(marketMessage || "지금은 거래 시간이 아닙니다.");
+    if (!me) throw new Error("먼저 로그인하세요.");
+    if (!Number.isFinite(shares) || shares < 1) throw new Error("수량을 1 이상 입력하세요.");
+
+    const price = getCurrentPrice(stockId);
+    const total = price * shares;
+
+    const { data: s, error: e0 } = await sb.from("students").select("balance").eq("id", me.id).single();
+    if (e0) throw e0;
+    if (s.balance < total) throw new Error(`포인트가 부족해요! (필요: ${total}P)`);
+
+    const { data: h0, error: eh0 } = await sb
+      .from("holdings")
+      .select("shares, avg_cost")
+      .eq("student_id", me.id)
+      .eq("stock_id", stockId)
+      .maybeSingle();
+    if (eh0) throw eh0;
+
+    const oldShares = h0?.shares ?? 0;
+    const oldAvg = h0?.avg_cost ?? 0;
+
+    const newShares = oldShares + shares;
+    const newAvg = Math.floor(((oldAvg * oldShares) + (price * shares)) / newShares);
+
+    const { error: e1 } = await sb.from("students").update({ balance: s.balance - total }).eq("id", me.id);
+    if (e1) throw e1;
+
+    const { error: e2 } = await sb.from("holdings").upsert({
+      student_id: me.id,
+      stock_id: stockId,
+      shares: newShares,
+      avg_cost: newAvg,
+      updated_at: new Date().toISOString()
+    });
+    if (e2) throw e2;
+
+    const { error: e3 } = await sb.from("trades").insert({
+      student_id: me.id,
+      stock_id: stockId,
+      side: "buy",
+      shares,
+      price,
+      total,
+      memo: "매수"
+    });
+    if (e3) throw e3;
+
+    const sym = stockCache.find(x => x.id === stockId)?.symbol ?? "";
+    const { error: e4 } = await sb.from("ledger").insert({
+      student_id: me.id,
+      type: "trade_buy",
+      amount: -total,
+      memo: `주식 매수: ${sym} ${shares}주 @${price}`
+    });
+    if (e4) throw e4;
+  }
+
+  async function sellStockNow(stockId, shares) {
+    if (!marketOpen) throw new Error(marketMessage || "지금은 거래 시간이 아닙니다.");
+    if (!me) throw new Error("먼저 로그인하세요.");
+    if (!Number.isFinite(shares) || shares < 1) throw new Error("수량을 1 이상 입력하세요.");
+
+    const price = getCurrentPrice(stockId);
+    const total = price * shares;
+
+    const { data: h0, error: eh0 } = await sb
+      .from("holdings")
+      .select("shares, avg_cost")
+      .eq("student_id", me.id)
+      .eq("stock_id", stockId)
+      .maybeSingle();
+    if (eh0) throw eh0;
+
+    const oldShares = h0?.shares ?? 0;
+    const oldAvg = h0?.avg_cost ?? 0;
+    if (oldShares < shares) throw new Error(`보유 주식이 부족해요. (보유: ${oldShares}주)`);
+
+    const newShares = oldShares - shares;
+    const newAvg = newShares === 0 ? 0 : oldAvg;
+
+    const { data: s, error: e0 } = await sb.from("students").select("balance").eq("id", me.id).single();
+    if (e0) throw e0;
+
+    const { error: e1 } = await sb.from("students").update({ balance: s.balance + total }).eq("id", me.id);
+    if (e1) throw e1;
+
+    const { error: e2 } = await sb.from("holdings").upsert({
+      student_id: me.id,
+      stock_id: stockId,
+      shares: newShares,
+      avg_cost: newAvg,
+      updated_at: new Date().toISOString()
+    });
+    if (e2) throw e2;
+
+    const { error: e3 } = await sb.from("trades").insert({
+      student_id: me.id,
+      stock_id: stockId,
+      side: "sell",
+      shares,
+      price,
+      total,
+      memo: "매도"
+    });
+    if (e3) throw e3;
+
+    const sym = stockCache.find(x => x.id === stockId)?.symbol ?? "";
+    const { error: e4 } = await sb.from("ledger").insert({
+      student_id: me.id,
+      type: "trade_sell",
+      amount: total,
+      memo: `주식 매도: ${sym} ${shares}주 @${price}`
+    });
+    if (e4) throw e4;
+  }
+
+  // 학생 버튼 연결
+  document.getElementById("buyStock").onclick = async () => {
+    if (!needSupabase()) return;
+    try {
+      const stockId = Number(document.getElementById("mStock").value);
+      const shares = Number(document.getElementById("mShares").value);
+      await buyStockNow(stockId, shares);
+      await refreshStudent();
+      document.getElementById("stockMsg").textContent = "매수 완료!";
+    } catch (e) {
+      document.getElementById("stockMsg").textContent = e.message || "매수 실패";
+    }
+  };
+
+  document.getElementById("sellStock").onclick = async () => {
+    if (!needSupabase()) return;
+    try {
+      const stockId = Number(document.getElementById("mStock").value);
+      const shares = Number(document.getElementById("mShares").value);
+      await sellStockNow(stockId, shares);
+      await refreshStudent();
+      document.getElementById("stockMsg").textContent = "매도 완료!";
+    } catch (e) {
+      document.getElementById("stockMsg").textContent = e.message || "매도 실패";
+    }
+  };
+
+  // =========================================================
+  // (10) 교사: 거래장 열기/닫기 + 가격 공시 + 종목 추가
+  // =========================================================
+  document.getElementById("openMarket").onclick = async () => {
+    if (!teacherMode) return alert("교사 모드에서만 가능합니다.");
+    try {
+      const msg = document.getElementById("marketMsg").value.trim() || "지금 거래 가능합니다!";
+      const { error } = await sb.from("market_state").update({
+        is_open: true,
+        message: msg,
+        updated_at: new Date().toISOString()
+      }).eq("id", 1);
+      if (error) throw error;
+      await loadMarketState();
+      alert("거래장을 열었습니다!");
+    } catch (e) {
+      alert(e.message || "거래장 열기 실패");
+    }
+  };
+
+  document.getElementById("closeMarket").onclick = async () => {
+    if (!teacherMode) return alert("교사 모드에서만 가능합니다.");
+    try {
+      const msg = document.getElementById("marketMsg").value.trim() || "지금은 거래 시간이 아닙니다.";
+      const { error } = await sb.from("market_state").update({
+        is_open: false,
+        message: msg,
+        updated_at: new Date().toISOString()
+      }).eq("id", 1);
+      if (error) throw error;
+      await loadMarketState();
+      alert("거래장을 닫았습니다!");
+    } catch (e) {
+      alert(e.message || "거래장 닫기 실패");
+    }
+  };
+
+  document.getElementById("publishPrice").onclick = async () => {
+    if (!teacherMode) return alert("교사 모드에서만 가능합니다.");
+    try {
+      const stockId = Number(document.getElementById("exStock").value);
+      const price = Number(document.getElementById("exPrice").value);
+      const note = document.getElementById("exNote").value.trim();
+      if (!stockId || !Number.isFinite(price) || price < 1) return alert("종목/가격을 올바르게 입력하세요.");
+
+      const { error } = await sb.from("stock_prices").insert({
+        stock_id: stockId,
+        price,
+        note
+      });
+      if (error) throw error;
+
+      document.getElementById("exPrice").value = "";
+      document.getElementById("exNote").value = "";
+      await refreshStockMarket();
+      if (me) await refreshStudent();
+      alert("가격 공시 완료!");
+    } catch (e) {
+      alert(e.message || "가격 공시 실패");
+    }
+  };
+
+  document.getElementById("refreshExchange").onclick = async () => {
+    if (!teacherMode) return;
+    try {
+      await refreshStockMarket();
+      await loadMarketState().catch(()=>{});
+      alert("새로고침 완료!");
+    } catch (e) {
+      alert(e.message || "새로고침 실패");
+    }
+  };
+
+  document.getElementById("addStock").onclick = async () => {
+    if (!teacherMode) return alert("교사 모드에서만 가능합니다.");
+    try {
+      const symbol = document.getElementById("newSymbol").value.trim().toUpperCase();
+      const name = document.getElementById("newName").value.trim();
+      const description = document.getElementById("newDesc").value.trim();
+      const initPrice = Number(document.getElementById("newInitPrice").value);
+
+      if (!symbol || !name || !Number.isFinite(initPrice) || initPrice < 1) {
+        return alert("심볼/종목명/초기가격을 올바르게 입력하세요.");
+      }
+
+      const { data: st, error: e1 } = await sb.from("stocks").insert({
+        symbol, name, description, is_active: true
+      }).select("id").single();
+      if (e1) throw e1;
+
+      const { error: e2 } = await sb.from("stock_prices").insert({
+        stock_id: st.id,
+        price: initPrice,
+        note: "상장 초기 가격"
+      });
+      if (e2) throw e2;
+
+      document.getElementById("newSymbol").value = "";
+      document.getElementById("newName").value = "";
+      document.getElementById("newDesc").value = "";
+      document.getElementById("newInitPrice").value = "";
+
+      await refreshStockMarket();
+      alert("종목 추가 완료!");
+    } catch (e) {
+      alert(e.message || "종목 추가 실패");
+    }
+  };
+
+  // =========================================================
+  // (11) Market Banner / 초기 부팅
+  // =========================================================
+  (async function init() {
+    if (sb) {
+      await bootstrapAfterConnected();
+    }
+    showView("view-setup");
+    renderMarketStateUI();
+    renderMarketBanner();
+  })();
+</script>
+</body>
+</html>
