@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>우리반 교실경제</title>
+  <title>곰코노미</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root{
@@ -295,6 +295,13 @@
         <div>연결: <b id="statusConn">OFF</b></div>
         <div>거래장: <b id="statusMarket">-</b></div>
       </div>
+    </div>
+
+    <!-- ✅ 개인정보 처리 안내 링크 (추가) -->
+    <div style="display:flex; justify-content:flex-end; margin:-6px 0 12px;">
+      <a href="#" id="openPrivacy" style="font-size:13px; color:#2563eb; text-decoration:underline;">
+        개인정보 처리 안내
+      </a>
     </div>
 
     <!-- Setup -->
@@ -656,9 +663,6 @@
     container.querySelectorAll(".tab").forEach(b=>{
       b.classList.toggle("active", b.dataset.tab === tabId);
     });
-    // tabpanel은 전역에 있으니 id로 제어
-    // 같은 페이지에서 다른 탭셋이 있어도 서로 영향 주지 않도록
-    // 해당 container의 버튼들이 가리키는 패널만 토글
     const targetIds = Array.from(container.querySelectorAll(".tab")).map(b=>b.dataset.tab);
     targetIds.forEach(id=>{
       const panel = document.getElementById(id);
@@ -666,19 +670,11 @@
     });
   }
 
-  // 최초 탭 연결
   setupTabs("studentTabs", "stu-info");
-  // teacherTabs는 교사 모드 열릴 때 활성화(teacherArea가 display:none일 때도 문제없지만, 안전하게)
   setupTabs("teacherTabs", "t-economy");
 
-  // 학생 대시보드로 들어갈 때 기본 탭은 내 정보로
-  function resetStudentTabs(){
-    activateTab("studentTabs", "stu-info");
-  }
-  // 교사 대시보드로 들어갈 때 기본 탭은 경제로
-  function resetTeacherTabs(){
-    activateTab("teacherTabs", "t-economy");
-  }
+  function resetStudentTabs(){ activateTab("studentTabs", "stu-info"); }
+  function resetTeacherTabs(){ activateTab("teacherTabs", "t-economy"); }
 
   // =========================================================
   // (1) Supabase 설정
@@ -792,7 +788,6 @@
       .eq("id", 1);
     if (e1) throw e1;
 
-    // ledger.student_id가 NOT NULL이면 여기서 에러가 날 수 있어요.
     const { error: e2 } = await sb.from("ledger").insert({
       student_id: null,
       type: "treasury",
@@ -886,7 +881,7 @@
   }
 
   // =========================================================
-  // (4) 쿠폰 상점 (부가세 5% -> 공동기금)
+  // (4) 쿠폰 상점
   // =========================================================
   async function loadCoupons() {
     const { data, error } = await sb
@@ -953,7 +948,7 @@
 
       try {
         await addTreasury(vat, `부가세 적립: ${coupon.title}`);
-      } catch (e) {
+      } catch (_) {
         alert("경고: 공동기금 적립에 실패했어요. 교사 모드에서 확인해 주세요.");
       }
     }
@@ -1023,7 +1018,6 @@
     document.getElementById("exitTeacher").style.display = "none";
   };
 
-  // 공동기금 수동 조정
   document.getElementById("treasuryApply").onclick = async () => {
     if (!teacherMode) return;
     const delta = Number(document.getElementById("treasuryAdjust").value);
@@ -1040,7 +1034,6 @@
     }
   };
 
-  // 수동 포인트 지급/차감
   async function loadStudentsDropdown() {
     const { data, error } = await sb.from("students").select("*").order("student_no", { ascending: true });
     if (error) return;
@@ -1084,7 +1077,6 @@
     alert("반영 완료!");
   };
 
-  // 쿠폰 추가
   document.getElementById("cAdd").onclick = async () => {
     if (!teacherMode) return;
     const title = document.getElementById("cTitle").value.trim();
@@ -1156,7 +1148,7 @@
   };
 
   // =========================================================
-  // (7) 주급 지급(일괄) + 소득세 10% -> 공동기금
+  // (7) 주급 지급 + 소득세
   // =========================================================
   async function computePayrollRows() {
     const { data: students, error: e1 } = await sb.from("students").select("id,student_no,name").order("student_no", { ascending: true });
@@ -1271,7 +1263,7 @@
   };
 
   // =========================================================
-  // (8) 주식: 거래장 상태(market_state)
+  // (8) 주식: 거래장 상태
   // =========================================================
   async function loadMarketState() {
     const { data, error } = await sb.from("market_state").select("*").eq("id", 1).single();
@@ -1549,7 +1541,6 @@
     if (e4) throw e4;
   }
 
-  // 학생 버튼 연결
   document.getElementById("buyStock").onclick = async () => {
     if (!needSupabase()) return;
     try {
@@ -1576,9 +1567,6 @@
     }
   };
 
-  // =========================================================
-  // (10) 교사: 거래장 열기/닫기 + 가격 공시 + 종목 추가
-  // =========================================================
   document.getElementById("openMarket").onclick = async () => {
     if (!teacherMode) return alert("교사 모드에서만 가능합니다.");
     try {
@@ -1685,9 +1673,6 @@
     }
   };
 
-  // =========================================================
-  // (11) Market Banner / 초기 부팅
-  // =========================================================
   (async function init() {
     if (sb) {
       await bootstrapAfterConnected();
@@ -1697,5 +1682,88 @@
     renderMarketBanner();
   })();
 </script>
+
+<!-- ✅ 모달 HTML (추가) : 반드시 body 안, 그리고 아래 JS보다 위에 -->
+<div id="privacyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; padding:16px;">
+  <div style="max-width:900px; margin:40px auto; background:#fff; border-radius:14px; border:1px solid #e7e7e7; box-shadow:0 8px 24px rgba(0,0,0,.15); overflow:hidden;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee;">
+      <b>곰코노미 개인정보 처리 안내</b>
+      <button id="closePrivacy" class="secondary" style="padding:8px 10px; border-radius:10px;">닫기</button>
+    </div>
+
+    <div style="padding:16px; max-height:70vh; overflow:auto; line-height:1.55;">
+      <p class="muted" style="margin-top:0;">
+        본 안내는 학교 수업(교실경제 활동) 운영을 위해 곰코노미에서 처리되는 개인정보 항목과 절차를 설명합니다.
+      </p>
+
+      <h4 style="margin:14px 0 8px;">1. 최소 처리 원칙 준수</h4>
+      <ul style="margin:0 0 10px 18px;">
+        <li><b>수집 항목</b>: 학생 번호, PIN, (선택) 이름, 포인트/거래 등 학습활동 데이터</li>
+        <li><b>수집 목적</b>: 학생별 교실경제 활동 관리, 포인트·쿠폰·주식 거래 기록 제공, 교육적 피드백</li>
+        <li><b>보유 기간</b>: 해당 학년도 종료 시까지(종료 후 삭제 또는 익명화)</li>
+      </ul>
+
+      <h4 style="margin:14px 0 8px;">2. 개인정보 안전조치 의무</h4>
+      <ul style="margin:0 0 10px 18px;">
+        <li>HTTPS 통신 사용</li>
+        <li>교사 PIN 기반 관리자 기능 제한</li>
+        <li>식별정보 최소화(번호 중심 운영), 민감정보 미수집</li>
+        <li>학년도 종료 후 데이터 삭제 원칙</li>
+      </ul>
+
+      <h4 style="margin:14px 0 8px;">3. 열람·정정·삭제·처리정지 절차</h4>
+      <ul style="margin:0 0 10px 18px;">
+        <li>학생 및 법정대리인은 언제든 본인 정보의 열람/정정/삭제/처리정지를 요청할 수 있습니다.</li>
+        <li><b>요청 방법</b>: 담임교사에게 요청 → 교사가 관리자 화면에서 조치</li>
+      </ul>
+
+      <h4 style="margin:14px 0 8px;">4. 만 14세 미만 아동 보호</h4>
+      <ul style="margin:0 0 10px 18px;">
+        <li>학기 초 안내 및 (필요 시) 법정대리인 동의 절차를 진행합니다.</li>
+        <li>교육 목적 외 활용을 금지합니다.</li>
+      </ul>
+
+      <h4 style="margin:14px 0 8px;">5. 보호책임자 / 제3자 제공 / 위탁</h4>
+      <ul style="margin:0 0 10px 18px;">
+        <li><b>보호책임자</b>: 담임교사(또는 운영교사) / 연락: 학교 대표전화 또는 업무용 이메일</li>
+        <li><b>제3자 제공</b>: 원칙적으로 제공하지 않습니다.</li>
+        <li><b>위탁</b>: 데이터 저장 인프라로 Supabase 클라우드 서비스를 이용할 수 있습니다.</li>
+      </ul>
+
+      <p class="muted" style="margin-bottom:0;">
+        ※ 학교 실정에 맞게 보호책임자/연락처, 보유기간 등 일부 문구를 조정하여 사용하세요.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ 모달 JS (추가) : 반드시 script 태그 안 -->
+<script>
+  (function () {
+    const privacyModal = document.getElementById("privacyModal");
+    const openBtn = document.getElementById("openPrivacy");
+    const closeBtn = document.getElementById("closePrivacy");
+
+    if (!privacyModal || !openBtn || !closeBtn) return;
+
+    openBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      privacyModal.style.display = "block";
+    });
+
+    closeBtn.addEventListener("click", () => {
+      privacyModal.style.display = "none";
+    });
+
+    privacyModal.addEventListener("click", (e) => {
+      if (e.target === privacyModal) privacyModal.style.display = "none";
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") privacyModal.style.display = "none";
+    });
+  })();
+</script>
+
 </body>
 </html>
