@@ -1035,7 +1035,7 @@
     if (!needSupabase()) return;
     const pin = document.getElementById("teacherPin").value.trim();
     const real = localStorage.getItem(teacherPinKey);
-    if (pin !== real) return alert("교사 PIN이 틀렸어요.");
+    if (pin !== DEFAULT_TEACHER_PIN) return alert("교사 PIN이 틀렸어요.");
 
     teacherMode = true;
     setTeacherUI();
@@ -2033,3 +2033,4 @@
 
 </body>
 </html>
+
