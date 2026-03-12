@@ -596,6 +596,34 @@
 
                 <p class="muted">종목을 숨기려면 Supabase에서 <b>stocks.is_active = false</b>로 변경하세요.</p>
               </div>
+</div>
+
+              <div class="card" style="border: 2px solid #b00020;">
+                <h4 style="color: #b00020; margin-top:0;">⚖️ 학생 주식 강제 조정 (관리자 권한)</h4>
+                <p class="muted">학생에게 주식을 무료로 주거나 뺏을 수 있습니다. 돈은 빠져나가지 않습니다.</p>
+                
+                <div class="row">
+                  <select id="tManageStockStudent" style="padding: 8px;">
+                    <option value="">학생 선택...</option>
+                  </select>
+
+                  <select id="tManageStockList" style="padding: 8px;">
+                    <option value="">주식 종목 선택...</option>
+                  </select>
+
+                  <input type="number" id="tManageStockShares" placeholder="증감 수량(예: 5, -3)" style="padding: 8px; width: 180px;">
+
+<span id="tCurrentStockInfo" style="color: #2563eb; font-weight: bold; margin-left: 10px; margin-right: 10px;"></span>
+                  
+<button id="btnManageStock" style="...">주식 수량 변경</button>
+                  
+                  <button id="btnManageStock" style="background-color: #b00020; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                    주식 수량 변경
+                  </button>
+                </div>
+              </div>
+              </div>
+          </div>
             </div>
           </div>
 
@@ -1069,6 +1097,7 @@
     await loadStudentsDropdown();
     await loadStudentsForJobAssign();
     await loadJobsDropdown();
+    await loadDropdownsForStockManager();
 
     resetTeacherTabs();
     showView("view-teacher");
@@ -1207,6 +1236,7 @@
     if (!teacherMode) return;
     await loadStudentsForJobAssign();
     await loadJobsDropdown();
+    await loadDropdownsForStockManager(); 
     alert("새로고침 완료!");
   };
 
@@ -1607,16 +1637,22 @@
 document.getElementById("buyStock").onclick = async () => {
     if (!needSupabase()) return;
 
-    // 🛡️ 1. 버튼 꽁꽁 묶기
+    // 🛡️ 1. 버튼 꽁꽁 묶기 (따닥 방지)
     const btn = document.getElementById("buyStock");
     btn.disabled = true;
     const originalText = btn.innerHTML;
     btn.innerHTML = "⏳ 처리 중...";
 
     try {
-      // (선생님의 원래 매수 로직)
       const stockId = Number(document.getElementById("mStock").value);
       const shares = Number(document.getElementById("mShares").value);
+
+      // 🛡️ 2. [신규 추가] 마이너스, 0, 소수점 입력 원천 차단! (꼼수 방지)
+      if (shares <= 0 || !Number.isInteger(shares)) {
+        return alert("올바른 수량(1 이상의 자연수)을 입력해 주세요.");
+      }
+
+      // (정상적일 때만 아래 결제 진행)
       await buyStockNow(stockId, shares);
       await refreshStudent();
       document.getElementById("stockMsg").textContent = "매수 완료!";
@@ -1624,25 +1660,31 @@ document.getElementById("buyStock").onclick = async () => {
     } catch (e) {
       document.getElementById("stockMsg").textContent = e.message || "매수 실패";
     } finally {
-      // 🛡️ 2. 모든 작업이 끝난 후 버튼 다시 풀어주기
+      // 🛡️ 3. 모든 작업이 끝난 후 버튼 다시 풀어주기
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
   };
 
-  document.getElementById("sellStock").onclick = async () => {
+document.getElementById("sellStock").onclick = async () => {
     if (!needSupabase()) return;
 
-    // 🛡️ 1. 버튼 잠금
+    // 🛡️ 1. 버튼 꽁꽁 묶기 (따닥 방지)
     const btn = document.getElementById("sellStock");
     btn.disabled = true;
     const originalText = btn.innerHTML;
     btn.innerHTML = "⏳ 처리 중...";
 
     try {
-      // (선생님의 원래 매도 로직 알맹이)
       const stockId = Number(document.getElementById("mStock").value);
       const shares = Number(document.getElementById("mShares").value);
+
+      // 🛡️ 2. [신규 추가] 마이너스, 0, 소수점 입력 원천 차단! (꼼수 방지)
+      if (shares <= 0 || !Number.isInteger(shares)) {
+        return alert("올바른 수량(1 이상의 자연수)을 입력해 주세요.");
+      }
+
+      // (정상적일 때만 아래 매도 진행)
       await sellStockNow(stockId, shares);
       await refreshStudent();
       document.getElementById("stockMsg").textContent = "매도 완료!";
@@ -1650,7 +1692,7 @@ document.getElementById("buyStock").onclick = async () => {
     } catch (e) {
       document.getElementById("stockMsg").textContent = e.message || "매도 실패";
     } finally {
-      // 🛡️ 2. 버튼 잠금 해제
+      // 🛡️ 3. 모든 작업이 끝난 후 버튼 다시 풀어주기
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
@@ -2094,10 +2136,137 @@ async function handleBankTransaction(actionType) {
       alert("비율 변경 중 오류가 발생했습니다: " + err.message);
     }
   }
+// =========================================================
+// ⚖️ 교사 권한: 학생 주식 강제 조정 기능
+// =========================================================
+async function loadDropdownsForStockManager() {
+  if (!sb) return;
+  // 학생 목록 불러오기
+  const { data: students } = await sb.from("students").select("id, name, student_no").order("student_no");
+  const studentSelect = document.getElementById("tManageStockStudent");
+  if (studentSelect) {
+    studentSelect.innerHTML = '<option value="">학생 선택...</option>';
+    students?.forEach(s => {
+      studentSelect.innerHTML += `<option value="${s.id}">${s.student_no}번 ${s.name}</option>`;
+    });
+  }
+
+  // 주식 목록 불러오기
+  const { data: stocks } = await sb.from("stocks").select("id, name");
+  const stockSelect = document.getElementById("tManageStockList");
+  if (stockSelect) {
+    stockSelect.innerHTML = '<option value="">주식 종목 선택...</option>';
+    stocks?.forEach(st => {
+      stockSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`;
+    });
+  }
+}
+
+// 강제 조정 버튼 클릭 시 실행될 로직
+document.getElementById("btnManageStock").onclick = async () => {
+  if (!needSupabase()) return;
+
+  const studentId = document.getElementById("tManageStockStudent").value;
+  const stockId = Number(document.getElementById("tManageStockList").value);
+  const diff = Number(document.getElementById("tManageStockShares").value);
+
+  if (!studentId) return alert("학생을 선택하세요.");
+  if (!stockId) return alert("주식을 선택하세요.");
+  if (diff === 0 || !Number.isInteger(diff)) return alert("0이 아닌 정수(예: 3, -2)를 입력하세요.");
+
+  const btn = document.getElementById("btnManageStock");
+  btn.disabled = true;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = "⏳ 처리 중...";
+
+  try {
+    const { data: holding, error: hErr } = await sb.from("holdings")
+      .select("*").eq("student_id", studentId).eq("stock_id", stockId).maybeSingle();
+
+    if (hErr) throw hErr;
+
+    const currentShares = holding ? holding.shares : 0;
+    const newShares = currentShares + diff;
+
+    if (newShares < 0) {
+      return alert(`해당 학생은 현재 ${currentShares}주를 보유하고 있습니다. 그 이상 뺏을 수 없습니다.`);
+    }
+
+    if (newShares === 0) {
+      await sb.from("holdings").delete().eq("student_id", studentId).eq("stock_id", stockId);
+    } else {
+      await sb.from("holdings").upsert({
+        student_id: studentId,
+        stock_id: stockId,
+        shares: newShares,
+        avg_cost: holding ? holding.avg_cost : 0, 
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    await sb.from("ledger").insert({
+      student_id: studentId,
+      type: "teacher_action",
+      amount: 0,
+      memo: `[교사 권한] 주식 강제 조정: ${diff > 0 ? '+' : ''}${diff}주`
+    });
+
+    alert(`정상적으로 처리되었습니다! (현재 보유량: ${newShares}주)`);
+    document.getElementById("tManageStockShares").value = "";
+
+  } catch (e) {
+    alert("오류가 발생했습니다: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+};
+
+// =========================================================
+// 🔍 학생과 주식을 선택하면 현재 몇 주 있는지 자동으로 보여주기
+// =========================================================
+async function checkCurrentStockHolding() {
+  if (!sb) return;
+  
+  const studentId = document.getElementById("tManageStockStudent").value;
+  const stockId = document.getElementById("tManageStockList").value;
+  const infoSpan = document.getElementById("tCurrentStockInfo");
+
+  // 둘 중 하나라도 선택을 안 했으면 글씨를 비워둠
+  if (!studentId || !stockId) {
+    infoSpan.textContent = "";
+    return;
+  }
+
+  infoSpan.textContent = "조회 중... ⏳";
+
+  try {
+    const { data: holding, error } = await sb.from("holdings")
+      .select("shares")
+      .eq("student_id", studentId)
+      .eq("stock_id", stockId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const shares = holding ? holding.shares : 0;
+    infoSpan.textContent = `현재 보유량: ${shares}주`; // 짠! 수량 표시
+    infoSpan.style.color = shares > 0 ? "#2563eb" : "#6b7280"; // 1주 이상이면 파란색, 0주면 회색
+
+  } catch (e) {
+    infoSpan.textContent = "조회 실패";
+  }
+}
+
+// 학생 선택칸이나 주식 선택칸의 값이 '변경(change)'될 때마다 위 함수를 실행해라!
+document.getElementById("tManageStockStudent").addEventListener("change", checkCurrentStockHolding);
+document.getElementById("tManageStockList").addEventListener("change", checkCurrentStockHolding);
+
 </script>
 
 </body>
 </html>
+
 
 
 
