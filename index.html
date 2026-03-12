@@ -962,45 +962,64 @@
   async function buyCoupon(coupon) {
     if (!me) return alert("먼저 로그인하세요.");
 
-    const vat = Math.floor(coupon.price * VAT_RATE);
-    const total = coupon.price + vat;
-
-    if (me.balance < total) return alert(`포인트가 부족해요! (필요: ${total}P)`);
-
-    const newBal = me.balance - total;
-    const { error: e1 } = await sb.from("students").update({ balance: newBal }).eq("id", me.id);
-    if (e1) return alert("구매 실패(잔액 업데이트 오류)");
-
-    const { error: e2 } = await sb.from("ledger").insert({
-      student_id: me.id,
-      type: "spend",
-      amount: -coupon.price,
-      memo: `쿠폰 구매: ${coupon.title}`,
-      coupon_id: coupon.id
-    });
-    if (e2) return alert("구매 실패(기록 오류)");
-
-    if (vat > 0) {
-      const { error: e3 } = await sb.from("ledger").insert({
-        student_id: me.id,
-        type: "tax",
-        amount: -vat,
-        memo: `부가세(5%): ${coupon.title}`,
-        coupon_id: coupon.id
-      });
-      if (e3) return alert("구매 실패(세금 기록 오류)");
-
-      try {
-        await addTreasury(vat, `부가세 적립: ${coupon.title}`);
-      } catch (_) {
-        alert("경고: 공동기금 적립에 실패했어요. 교사 모드에서 확인해 주세요.");
-      }
+    // 🛡️ 1. 클릭한 구매 버튼 찾아서 잠그기!
+    const btn = window.event ? window.event.currentTarget : null;
+    let originalText = "";
+    if (btn) {
+      btn.disabled = true;
+      originalText = btn.innerHTML;
+      btn.innerHTML = "⏳ 구매 중...";
     }
 
-    await refreshStudent();
-    alert("구매 완료!");
-  }
+    // 🌟 2. 전체 구매 로직을 try 안에 안전하게 가둡니다.
+    try {
+      const vat = Math.floor(coupon.price * VAT_RATE);
+      const total = coupon.price + vat;
 
+      // 잔액 부족으로 여기서 return(튕겨내기) 되어도, 아래 finally가 작동하여 버튼을 풀어줍니다!
+      if (me.balance < total) return alert(`포인트가 부족해요! (필요: ${total}P)`);
+
+      const newBal = me.balance - total;
+      const { error: e1 } = await sb.from("students").update({ balance: newBal }).eq("id", me.id);
+      if (e1) return alert("구매 실패(잔액 업데이트 오류)");
+
+      const { error: e2 } = await sb.from("ledger").insert({
+        student_id: me.id,
+        type: "spend",
+        amount: -coupon.price,
+        memo: `쿠폰 구매: ${coupon.title}`,
+        coupon_id: coupon.id
+      });
+      if (e2) return alert("구매 실패(기록 오류)");
+
+      if (vat > 0) {
+        const { error: e3 } = await sb.from("ledger").insert({
+          student_id: me.id,
+          type: "tax",
+          amount: -vat,
+          memo: `부가세(5%): ${coupon.title}`,
+          coupon_id: coupon.id
+        });
+        if (e3) return alert("구매 실패(세금 기록 오류)");
+
+        try {
+          await addTreasury(vat, `부가세 적립: ${coupon.title}`);
+        } catch (_) {
+          alert("경고: 공동기금 적립에 실패했어요. 교사 모드에서 확인해 주세요.");
+        }
+      }
+
+      await refreshStudent();
+      alert("구매 완료!");
+
+    } finally {
+      // 🛡️ 3. 성공, 실패, 잔액 부족 등 어떤 상황이든 무조건 버튼 잠금 해제!
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+  }
   async function loadMyLedger() {
     const { data, error } = await sb
       .from("ledger")
@@ -1613,14 +1632,27 @@ document.getElementById("buyStock").onclick = async () => {
 
   document.getElementById("sellStock").onclick = async () => {
     if (!needSupabase()) return;
+
+    // 🛡️ 1. 버튼 잠금
+    const btn = document.getElementById("sellStock");
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 처리 중...";
+
     try {
+      // (선생님의 원래 매도 로직 알맹이)
       const stockId = Number(document.getElementById("mStock").value);
       const shares = Number(document.getElementById("mShares").value);
       await sellStockNow(stockId, shares);
       await refreshStudent();
       document.getElementById("stockMsg").textContent = "매도 완료!";
+      
     } catch (e) {
       document.getElementById("stockMsg").textContent = e.message || "매도 실패";
+    } finally {
+      // 🛡️ 2. 버튼 잠금 해제
+      btn.disabled = false;
+      btn.innerHTML = originalText;
     }
   };
 
@@ -1839,40 +1871,60 @@ document.getElementById("buyStock").onclick = async () => {
   };
 
   // 2. 학생: 은행 예금 / 출금 로직
-  async function handleBankTransaction(actionType) {
+async function handleBankTransaction(actionType) {
     if (!me) return alert("로그인이 필요합니다.");
     const amount = parseInt(document.getElementById('bankAmount').value, 10);
     if (!amount || amount <= 0) return alert("올바른 금액을 입력하세요.");
 
-    const { data: student } = await sb.from('students').select('balance').eq('id', me.id).single();
-    const { data: bank } = await sb.from('bank_accounts').select('deposit_balance, loan_balance').eq('student_id', me.id).maybeSingle();
-
-    let newWalletBalance = student.balance;
-    let newDepositBalance = bank ? bank.deposit_balance : 0;
-    let ledgerType = '', ledgerMemo = '', ledgerAmount = 0;
-
-    if (actionType === 'deposit') {
-      if (newWalletBalance < amount) return alert("지갑 포인트가 부족합니다.");
-      newWalletBalance -= amount;
-      newDepositBalance += amount;
-      ledgerType = 'deposit'; ledgerMemo = '은행 예금'; ledgerAmount = -amount;
-    } else if (actionType === 'withdraw') {
-      if (newDepositBalance < amount) return alert("통장 잔액이 부족합니다.");
-      newWalletBalance += amount;
-      newDepositBalance -= amount;
-      ledgerType = 'withdraw'; ledgerMemo = '은행 출금'; ledgerAmount = amount;
+    // 🛡️ 1. 클릭한 버튼(예금 또는 출금) 찾아서 잠그기!
+    const btn = window.event ? window.event.currentTarget : null;
+    let originalText = "";
+    if (btn) {
+      btn.disabled = true;
+      originalText = btn.innerHTML;
+      btn.innerHTML = "⏳ 처리 중...";
     }
 
+    // 🌟 2. 여기서부터 기존 로직 전체를 큰 try 안에 가둡니다!
     try {
+      const { data: student } = await sb.from('students').select('balance').eq('id', me.id).single();
+      const { data: bank } = await sb.from('bank_accounts').select('deposit_balance, loan_balance').eq('student_id', me.id).maybeSingle();
+
+      let newWalletBalance = student.balance;
+      let newDepositBalance = bank ? bank.deposit_balance : 0;
+      let ledgerType = '', ledgerMemo = '', ledgerAmount = 0;
+
+      if (actionType === 'deposit') {
+        // ※ 자바스크립트는 여기서 return으로 함수를 끝내려 해도, 무조건 아래의 finally를 거쳐서 버튼을 풀어주고 끝냅니다. (안전!)
+        if (newWalletBalance < amount) return alert("지갑 포인트가 부족합니다."); 
+        newWalletBalance -= amount;
+        newDepositBalance += amount;
+        ledgerType = 'deposit'; ledgerMemo = '은행 예금'; ledgerAmount = -amount;
+      } else if (actionType === 'withdraw') {
+        if (newDepositBalance < amount) return alert("통장 잔액이 부족합니다.");
+        newWalletBalance += amount;
+        newDepositBalance -= amount;
+        ledgerType = 'withdraw'; ledgerMemo = '은행 출금'; ledgerAmount = amount;
+      }
+
       await sb.from('bank_accounts').upsert({ student_id: me.id, deposit_balance: newDepositBalance, loan_balance: bank?.loan_balance || 0, updated_at: new Date().toISOString() });
       await sb.from('students').update({ balance: newWalletBalance }).eq('id', me.id);
       await sb.from('ledger').insert([{ student_id: me.id, type: ledgerType, amount: ledgerAmount, memo: ledgerMemo }]);
+      
       alert(`${amount}P가 정상적으로 처리되었습니다.`);
       document.getElementById('bankAmount').value = '';
       await refreshStudent();
-    } catch (err) { alert("오류가 발생했습니다: " + err.message); }
-  }
 
+    } catch (err) { 
+      alert("오류가 발생했습니다: " + err.message); 
+    } finally {
+      // 🛡️ 3. 예금이 성공하든, 잔액 부족으로 튕기든, 에러가 나든 무조건 버튼 다시 풀어주기!
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+  }
   // 3. 교사: 예금 이자 일괄 지급 로직
   async function settleBankInterest() {
     if (!confirm("모든 학생에게 예금 이자를 지급하시겠습니까?")) return;
@@ -2046,5 +2098,6 @@ document.getElementById("buyStock").onclick = async () => {
 
 </body>
 </html>
+
 
 
