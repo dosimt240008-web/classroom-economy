@@ -1585,16 +1585,29 @@
     if (e4) throw e4;
   }
 
-  document.getElementById("buyStock").onclick = async () => {
+document.getElementById("buyStock").onclick = async () => {
     if (!needSupabase()) return;
+
+    // 🛡️ 1. 버튼 꽁꽁 묶기
+    const btn = document.getElementById("buyStock");
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 처리 중...";
+
     try {
+      // (선생님의 원래 매수 로직)
       const stockId = Number(document.getElementById("mStock").value);
       const shares = Number(document.getElementById("mShares").value);
       await buyStockNow(stockId, shares);
       await refreshStudent();
       document.getElementById("stockMsg").textContent = "매수 완료!";
+      
     } catch (e) {
       document.getElementById("stockMsg").textContent = e.message || "매수 실패";
+    } finally {
+      // 🛡️ 2. 모든 작업이 끝난 후 버튼 다시 풀어주기
+      btn.disabled = false;
+      btn.innerHTML = originalText;
     }
   };
 
@@ -2033,4 +2046,5 @@
 
 </body>
 </html>
+
 
