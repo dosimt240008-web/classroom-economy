@@ -549,6 +549,47 @@
                 </div>
               </div>
             </div>
+<!-- 👇 새로 추가하는 쿠폰 관리 패널 👇 -->
+              <div class="card" style="border: 2px solid #eab308; margin-top: 15px;">
+                <h4 style="color: #ca8a04; margin-top:0;">🎟️ 학생 쿠폰 사용 처리 (관리자 권한)</h4>
+                <p class="muted">학생이 쿠폰을 제출하면, 여기서 해당 쿠폰을 '사용 완료' 처리하여 지갑에서 회수합니다.</p>
+                
+                <div class="row">
+                  <select id="tManageCouponStudent" style="padding: 8px;">
+                    <option value="">학생 선택...</option>
+                  </select>
+
+                  <select id="tManageCouponList" style="padding: 8px; width: 220px;">
+                    <option value="">먼저 학생을 선택하세요...</option>
+                  </select>
+                  
+                  <button id="btnUseCoupon" style="background-color: #eab308; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                    쿠폰 사용 완료 (삭제)
+                  </button>
+                </div>
+              </div>
+              <!-- 👆 쿠폰 패널 끝 👆 -->
+<div class="card" style="border: 2px solid #0b7; margin-top: 15px;">
+                <h4 style="color: #047857; margin-top:0;">🎁 학생 쿠폰 지급 (관리자 권한)</h4>
+                <p class="muted">학생에게 특별 보상 등으로 쿠폰을 직접 지급합니다.</p>
+                
+                <div class="row">
+                  <select id="tGiveCouponStudent" style="padding: 8px;">
+                    <option value="">학생 선택...</option>
+                  </select>
+
+                  <select id="tGiveCouponList" style="padding: 8px; width: 220px;">
+                    <option value="">쿠폰 선택...</option>
+                  </select>
+
+                  <input type="number" id="tGiveCouponQty" value="1" min="1" style="padding: 8px; width: 80px;" placeholder="수량">
+                  
+                  <button id="btnGiveCoupon" style="background-color: #0b7; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                    쿠폰 지급하기
+                  </button>
+                </div>
+              </div>
+              <!-- 👆 쿠폰 지급 패널 끝 👆 -->
           </div>
 
           <div id="t-exchange" class="tabpanel">
@@ -1098,6 +1139,7 @@
     await loadStudentsForJobAssign();
     await loadJobsDropdown();
     await loadDropdownsForStockManager();
+    await loadDropdownsForCouponManager();
 
     resetTeacherTabs();
     showView("view-teacher");
@@ -1236,7 +1278,8 @@
     if (!teacherMode) return;
     await loadStudentsForJobAssign();
     await loadJobsDropdown();
-    await loadDropdownsForStockManager(); 
+    await loadDropdownsForStockManager();
+    await loadDropdownsForCouponManager();
     alert("새로고침 완료!");
   };
 
@@ -2261,11 +2304,149 @@ async function checkCurrentStockHolding() {
 // 학생 선택칸이나 주식 선택칸의 값이 '변경(change)'될 때마다 위 함수를 실행해라!
 document.getElementById("tManageStockStudent").addEventListener("change", checkCurrentStockHolding);
 document.getElementById("tManageStockList").addEventListener("change", checkCurrentStockHolding);
+// =========================================================
+// 🎟️ 교사 권한: 학생 쿠폰 사용 처리 및 직접 지급 기능 (통합본)
+// =========================================================
+async function loadDropdownsForCouponManager() {
+  if (!sb) return;
+  const { data: students } = await sb.from("students").select("id, name, student_no").order("student_no");
+  
+  // 1. [사용/회수 패널] 학생 목록 세팅
+  const cStudentSelect = document.getElementById("tManageCouponStudent");
+  if (cStudentSelect) {
+    cStudentSelect.innerHTML = '<option value="">학생 선택...</option>';
+    students?.forEach(s => {
+      cStudentSelect.innerHTML += `<option value="${s.id}">${s.student_no}번 ${s.name}</option>`;
+    });
+  }
 
+  // 2. [지급 패널] 학생 목록 세팅
+  const giveStudentSelect = document.getElementById("tGiveCouponStudent");
+  if (giveStudentSelect) {
+    giveStudentSelect.innerHTML = '<option value="">학생 선택...</option>';
+    students?.forEach(s => {
+      giveStudentSelect.innerHTML += `<option value="${s.id}">${s.student_no}번 ${s.name}</option>`;
+    });
+  }
+
+  // 3. [지급 패널] 지급할 쿠폰 종류 세팅
+  const { data: allCoupons } = await sb.from("coupons").select("*").eq("is_active", true).order("price");
+  const giveCouponSelect = document.getElementById("tGiveCouponList");
+  if (giveCouponSelect) {
+    giveCouponSelect.innerHTML = '<option value="">쿠폰 선택...</option>';
+    allCoupons?.forEach(c => {
+      giveCouponSelect.innerHTML += `<option value="${c.id}">${c.title} (${c.price}P)</option>`;
+    });
+  }
+}
+
+// 👉 [쿠폰 사용 패널] 학생 선택 시 보유 쿠폰 불러오기
+document.getElementById("tManageCouponStudent").addEventListener("change", async (e) => {
+  const studentId = e.target.value;
+  const couponSelect = document.getElementById("tManageCouponList");
+
+  if (!studentId) {
+    couponSelect.innerHTML = '<option value="">먼저 학생을 선택하세요...</option>';
+    return;
+  }
+  couponSelect.innerHTML = '<option value="">쿠폰 불러오는 중... ⏳</option>';
+
+  try {
+    const { data: myCoupons, error } = await sb.from("student_coupons").select("*, coupons(title)").eq("student_id", studentId);
+    if (error) throw error;
+    if (!myCoupons || myCoupons.length === 0) {
+      couponSelect.innerHTML = '<option value="">보유한 쿠폰이 없습니다.</option>';
+      return;
+    }
+
+    couponSelect.innerHTML = '<option value="">사용할 쿠폰 선택...</option>';
+    myCoupons.forEach(c => {
+      const cName = c.coupons?.title || "이름 없는 쿠폰";
+      const cQty = c.quantity || 1;
+      const qtyText = cQty > 1 ? ` (${cQty}개 보유)` : '';
+      couponSelect.innerHTML += `<option value="${c.id}">${cName}${qtyText}</option>`;
+    });
+  } catch (error) {
+    couponSelect.innerHTML = `<option value="">오류: ${error.message}</option>`;
+  }
+});
+
+// 👉 [쿠폰 사용 완료 버튼] 누를 때 (학생 지갑에서 삭제/차감)
+document.getElementById("btnUseCoupon").onclick = async () => {
+  if (!needSupabase()) return;
+  const studentId = document.getElementById("tManageCouponStudent").value;
+  const couponId = document.getElementById("tManageCouponList").value;
+
+  if (!studentId || !couponId) return alert("학생과 사용할 쿠폰을 선택하세요.");
+  if (!confirm("정말로 이 쿠폰을 사용(회수) 처리하시겠습니까?")) return;
+
+  const btn = document.getElementById("btnUseCoupon");
+  btn.disabled = true; btn.innerHTML = "⏳ 처리 중...";
+
+  try {
+    const { data: couponData, error: fetchErr } = await sb.from("student_coupons").select("*, coupons(title)").eq("id", couponId).eq("student_id", studentId).single();
+    if (fetchErr) throw fetchErr;
+
+    if (couponData.quantity > 1) {
+      await sb.from("student_coupons").update({ quantity: couponData.quantity - 1 }).eq("id", couponId);
+    } else {
+      await sb.from("student_coupons").delete().eq("id", couponId);
+    }
+
+    const cName = couponData.coupons?.title || "쿠폰";
+    await sb.from("ledger").insert({ student_id: studentId, type: "coupon_use", amount: 0, memo: `[쿠폰 사용] ${cName} 사용 완료 (회수됨)` });
+
+    alert("쿠폰 사용 처리가 완료되었습니다!");
+    document.getElementById("tManageCouponStudent").dispatchEvent(new Event('change'));
+  } catch (e) {
+    alert("오류가 발생했습니다: " + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = "쿠폰 사용 완료 (삭제)";
+  }
+};
+
+// 👉 [쿠폰 지급하기 버튼] 누를 때 (교사가 학생 지갑에 쿠폰 넣어주기)
+document.getElementById("btnGiveCoupon").onclick = async () => {
+  if (!needSupabase()) return;
+  const studentId = document.getElementById("tGiveCouponStudent").value;
+  const couponId = document.getElementById("tGiveCouponList").value;
+  const qty = parseInt(document.getElementById("tGiveCouponQty").value) || 1;
+
+  if (!studentId || !couponId) return alert("학생과 지급할 쿠폰을 선택하세요.");
+  if (qty < 1) return alert("수량은 1개 이상이어야 합니다.");
+
+  const btn = document.getElementById("btnGiveCoupon");
+  btn.disabled = true; btn.innerHTML = "⏳ 처리 중...";
+
+  try {
+    const { data: existing } = await sb.from("student_coupons").select("id, quantity").eq("student_id", studentId).eq("coupon_id", couponId).maybeSingle();
+
+    if (existing) {
+      await sb.from("student_coupons").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
+    } else {
+      await sb.from("student_coupons").insert({ student_id: studentId, coupon_id: couponId, quantity: qty });
+    }
+
+    const { data: cData } = await sb.from("coupons").select("title").eq("id", couponId).single();
+    const cName = cData ? cData.title : "쿠폰";
+    await sb.from("ledger").insert({ student_id: studentId, type: "teacher_action", amount: 0, memo: `[쿠폰 지급] 교사가 ${cName} ${qty}개 특별 지급` });
+
+    alert(`성공적으로 ${cName} ${qty}개를 지급했습니다! 🎁`);
+    
+    // 지급 즉시 위의 사용(회수) 패널도 새로고침 시키기
+    const useStudentSelect = document.getElementById("tManageCouponStudent");
+    if(useStudentSelect.value === studentId) useStudentSelect.dispatchEvent(new Event('change'));
+  } catch (e) {
+    alert("오류가 발생했습니다: " + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = "쿠폰 지급하기";
+  }
+};
 </script>
 
 </body>
 </html>
+
 
 
 
