@@ -423,6 +423,12 @@
 
       <div id="stu-coupon" class="tabpanel">
         <div class="grid">
+<div class="card" style="border: 2px solid #3b82f6; margin-bottom: 20px; background-color: #eff6ff;">
+            <h4 style="color: #1d4ed8; margin-top:0;">🎒 내 쿠폰 지갑</h4>
+            <div id="myCouponList" style="display: flex; flex-wrap: wrap; gap: 10px;">
+              <span class="muted">쿠폰을 불러오는 중... ⏳</span>
+            </div>
+          </div>
           <div class="card">
             <h3>🛒 쿠폰 상점 <span class="pill">부가세 5% 자동</span></h3>
             <div id="couponList"></div>
@@ -991,6 +997,7 @@
     await refreshStockMarket().catch(()=>{});
     await loadCoupons();
     await loadMyLedger();
+    await loadMyCoupons();
   }
 
   // =========================================================
@@ -1077,6 +1084,26 @@
           alert("경고: 공동기금 적립에 실패했어요. 교사 모드에서 확인해 주세요.");
         }
       }
+
+// =========================================================
+      // 🎒 [여기에 추가!] 내 지갑(student_coupons)에 구매한 쿠폰 넣어주기!
+      // =========================================================
+      const { data: existing } = await sb.from("student_coupons")
+        .select("id, quantity")
+        .eq("student_id", me.id)
+        .eq("coupon_id", coupon.id)
+        .maybeSingle();
+
+      if (existing) {
+        await sb.from("student_coupons").update({ quantity: existing.quantity + 1 }).eq("id", existing.id);
+      } else {
+        await sb.from("student_coupons").insert({
+          student_id: me.id,
+          coupon_id: coupon.id,
+          quantity: 1
+        });
+      }
+      // =========================================================
 
       await refreshStudent();
       alert("구매 완료!");
@@ -2442,6 +2469,36 @@ document.getElementById("btnGiveCoupon").onclick = async () => {
     btn.disabled = false; btn.innerHTML = "쿠폰 지급하기";
   }
 };
+// =========================================================
+// 🎒 학생 모드: 내 쿠폰 지갑 내용물 불러오기
+// =========================================================
+async function loadMyCoupons() {
+  const container = document.getElementById("myCouponList");
+  if (!container || !me) return;
+
+  try {
+    const { data: myCoupons, error } = await sb.from("student_coupons").select("*, coupons(title)").eq("student_id", me.id);
+    if (error) throw error;
+
+    if (!myCoupons || myCoupons.length === 0) {
+      container.innerHTML = '<span class="muted">아직 보유한 쿠폰이 없습니다. 상점에서 구매해 보세요!</span>';
+      return;
+    }
+
+    container.innerHTML = "";
+    myCoupons.forEach(c => {
+      const title = c.coupons?.title || "알 수 없는 쿠폰";
+      const qty = c.quantity || 1;
+      container.innerHTML += `
+        <div style="background: #fff; border: 1px dashed #3b82f6; padding: 10px 15px; border-radius: 8px; color: #1d4ed8; font-weight: bold; display: flex; align-items: center;">
+          🎟️ ${title} 
+          <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85em; margin-left: 8px;">${qty}개</span>
+        </div>`;
+    });
+  } catch (e) {
+    container.innerHTML = `<span style="color: red;">오류 발생</span>`;
+  }
+}
 </script>
 
 </body>
