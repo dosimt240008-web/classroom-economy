@@ -2093,8 +2093,19 @@ async function handleBankTransaction(actionType) {
         ledgerType = 'withdraw'; ledgerMemo = '은행 출금'; ledgerAmount = amount;
       }
 
-      await sb.from('bank_accounts').upsert({ student_id: me.id, deposit_balance: newDepositBalance, loan_balance: bank?.loan_balance || 0, updated_at: new Date().toISOString() });
-      await sb.from('students').update({ balance: newWalletBalance }).eq('id', me.id);
+// 통장 잔액 업데이트
+      await sb.from('bank_accounts').upsert({ 
+        student_id: me.id, 
+        deposit_balance: newDepositBalance, 
+        loan_balance: bank?.loan_balance || 0, 
+        updated_at: new Date().toISOString() 
+      });
+      
+      // 🌟 [핵심 마법] 지갑 잔액을 업데이트하면서, 은행 이자 시계도 '지금'으로 초기화해버립니다!
+      await sb.from('students').update({ 
+        balance: newWalletBalance,
+        last_interest_date: new Date().toISOString() // <--- 이 부분이 추가되었습니다!
+      }).eq('id', me.id);
       await sb.from('ledger').insert([{ student_id: me.id, type: ledgerType, amount: ledgerAmount, memo: ledgerMemo }]);
       
       alert(`${amount}P가 정상적으로 처리되었습니다.`);
