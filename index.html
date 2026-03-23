@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>곰코노미</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 👇 새로 추가할 마법의 그래프 도구 👇 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 👆 여기까지 👆 -->
   <style>
     :root{
       --bg:#ffffff;
@@ -403,6 +406,15 @@
 
       <div id="stu-stock" class="tabpanel">
         <div class="grid">
+<!-- 👇 새로 추가하는 '주간 주가 변동 추이' 그래프 영역 👇 -->
+          <div class="card" style="border: 2px solid #8b5cf6; margin-bottom: 20px;">
+            <h4 style="color: #6d28d9; margin-top:0;">📊 주간 주가 변동 추이 (최근 7일)</h4>
+            <!-- 아래의 canvas가 바로 그래프가 그려질 도화지입니다 -->
+            <div style="height: 250px;">
+              <canvas id="stockChart" style="width: 100%; height: 100%;"></canvas>
+            </div>
+          </div>
+          <!-- 👆 그래프 영역 끝 👆 -->
           <div class="card">
             <h3>📈 주식 시장 <span class="pill">OPEN일 때만 거래</span></h3>
             <p class="muted">현재 공시가로 즉시 매수/매도됩니다.</p>
@@ -1968,14 +1980,76 @@ document.getElementById("sellStock").onclick = async () => {
   // 🏦 곰코노미 은행 시스템 로직 (독립 추가)
   // =========================================================
   
-  // 1. 기존 학생 정보 리로드에 은행 잔액 조회 덧붙이기
+  // 1. 기존 학생 정보 리로드에 은행 잔액 조회 & 🌟자동 예금 이자 로직 덧붙이기
   const _oldRefreshStudent = typeof refreshStudent === 'function' ? refreshStudent : async function(){};
   refreshStudent = async function() {
-    await _oldRefreshStudent();
+    await _oldRefreshStudent(); // 기존 화면 그리기 실행
     if (!me) return;
-    const { data: bankData } = await sb.from("bank_accounts").select("deposit_balance").eq("student_id", me.id).maybeSingle();
-    const currentDeposit = bankData ? bankData.deposit_balance : 0;
     
+    // 1️⃣ 은행 계좌(bank_accounts)에서 통장 잔액 가져오기
+    const { data: bankData } = await sb.from("bank_accounts").select("deposit_balance").eq("student_id", me.id).maybeSingle();
+    let currentDeposit = bankData ? bankData.deposit_balance : 0;
+
+    // =========================================================
+    // 🏦 일주일(7일) 단위 자동 예금 이자 시스템
+    // =========================================================
+    if (!me.last_interest_date) {
+      const nowStr = new Date().toISOString();
+      await sb.from("students").update({ last_interest_date: nowStr }).eq("id", me.id);
+      me.last_interest_date = nowStr;
+    } else {
+      const lastDate = new Date(me.last_interest_date);
+      const now = new Date();
+      
+      const diffTime = now - lastDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+
+      if (diffDays >= 7) { 
+        const weeksPassed = Math.floor(diffDays / 7); 
+        
+        // 👉 통장에 돈(currentDeposit)이 있을 때만 이자 계산!
+        if (currentDeposit > 0) { 
+          const weeklyRate = 0.20; // 20% 이자율
+          const interest = Math.floor(currentDeposit * weeklyRate * weeksPassed);
+
+          if (interest > 0) {
+            currentDeposit += interest; // 통장 잔액에 이자 합산
+            
+            const daysToAdd = weeksPassed * 7;
+            const newInterestDate = new Date(lastDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000)).toISOString();
+
+            // 🎯 통장(bank_accounts)에 이자 넣기
+            await sb.from("bank_accounts").update({ 
+              deposit_balance: currentDeposit,
+              updated_at: new Date().toISOString()
+            }).eq("student_id", me.id);
+
+            // 🎯 학생(students)의 이자 시계 갱신
+            await sb.from("students").update({ 
+              last_interest_date: newInterestDate 
+            }).eq("id", me.id);
+
+            // 🎯 장부 기록
+            await sb.from("ledger").insert({
+              student_id: me.id,
+              type: "interest",
+              amount: interest,
+              memo: `[은행 이자] 예금 ${weeksPassed}주 유지 보상`
+            });
+
+            me.last_interest_date = newInterestDate;
+            alert(`🎉 [은행 알림] 예금을 일주일 이상 꾹 참고 유지하셨군요! ${weeksPassed}주치 이자 ${interest}P가 통장으로 들어왔습니다! 💰`);
+          }
+        } else {
+          // 통장이 비어있다면 시계만 리셋
+          await sb.from("students").update({ last_interest_date: now.toISOString() }).eq("id", me.id);
+          me.last_interest_date = now.toISOString();
+        }
+      }
+    }
+    // =========================================================
+
+    // 화면(UI)에 지갑 잔액과 '업데이트된' 은행 예금액 표시하기
     const walletEl = document.getElementById("currentWalletBalance");
     const depositEl = document.getElementById("currentBankDeposit");
     if (walletEl) walletEl.textContent = me.balance;
@@ -2499,6 +2573,112 @@ async function loadMyCoupons() {
     container.innerHTML = `<span style="color: red;">오류 발생</span>`;
   }
 }
+// =========================================================
+// 📊 주식 시장: 주간 주가 변동 추이 (하루 1개 축으로 깔끔하게!)
+// =========================================================
+let myStockChart = null; // 기존 그래프 기억용
+
+async function drawStockChart() {
+  if (!sb) return;
+  const canvas = document.getElementById("stockChart");
+  if (!canvas) return;
+
+  try {
+    // 1. 최근 7일 날짜 배열 만들기 (X축 눈금 7개 강제 고정!)
+    const labels = [];
+    const dateKeys = []; // 데이터 비교용 "YYYY-MM-DD"
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      labels.push(`${d.getMonth() + 1}/${d.getDate()}`); // 화면 표시용 (예: "3/17")
+      
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      dateKeys.push(`${y}-${m}-${day}`); // 검색용 (예: "2024-03-17")
+    }
+
+    // 2. 주식 종목과 모든 가격 데이터 가져오기
+    const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true);
+    const { data: prices } = await sb.from("stock_prices").select("*").order("effective_at", { ascending: true });
+
+    if (!stocks || !prices) return;
+
+    // 3. 핵심 마법! 날짜별로 '그 날의 마지막 가격(종가)'만 저장하기
+    const dailyPrices = {};
+    prices.forEach(p => {
+      const pDate = new Date(p.effective_at);
+      const y = pDate.getFullYear();
+      const m = String(pDate.getMonth() + 1).padStart(2, '0');
+      const day = String(pDate.getDate()).padStart(2, '0');
+      const pKey = `${y}-${m}-${day}`;
+      
+      if (!dailyPrices[pKey]) dailyPrices[pKey] = {};
+      // 가격이 시간순으로 오기 때문에, 계속 덮어쓰면 알아서 그 날의 '마지막' 가격만 남습니다.
+      dailyPrices[pKey][p.stock_id] = p.price; 
+    });
+
+    // 4. 종목별 선 긋기 준비
+    const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+    
+    const datasets = stocks.map((stock, index) => {
+      let currentPrice = null;
+      
+      // 혹시 7일 전보다 더 옛날에 만들어진 주식이면 그 가격을 시작점으로 삼음
+      const startDate = new Date(dateKeys[0] + "T00:00:00");
+      prices.filter(p => p.stock_id === stock.id).forEach(p => {
+        if (new Date(p.effective_at) < startDate) currentPrice = p.price;
+      });
+
+      // 7개의 눈금(날짜)을 돌면서 가격 채우기
+      const data = dateKeys.map(dk => {
+        if (dailyPrices[dk] && dailyPrices[dk][stock.id] !== undefined) {
+          currentPrice = dailyPrices[dk][stock.id]; // 그 날 변동이 있으면 새 가격으로 업데이트
+        }
+        return currentPrice; // 변동이 없으면 어제 가격 그대로 쭉 선을 이어줌
+      });
+
+      return {
+        label: stock.name,
+        data: data,
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length],
+        tension: 0.1, // 부드러운 꺾은선
+        borderWidth: 2,
+        pointRadius: 4
+      };
+    });
+
+    // 5. 기존 지저분한 그래프 지우고 새롭고 깔끔한 그래프 그리기!
+    if (myStockChart) myStockChart.destroy();
+
+    myStockChart = new Chart(canvas, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { ticks: { precision: 0 } }
+        },
+        plugins: {
+          legend: { position: 'top' }
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("그래프 그리기 실패:", error);
+  }
+}
+
+// 주식 탭이 열릴 때마다 그래프 최신화하기
+document.addEventListener("click", (e) => {
+  if (e.target.tagName === "BUTTON" && e.target.innerText.includes("주식")) {
+    setTimeout(drawStockChart, 200);
+  }
+});
 </script>
 
 </body>
