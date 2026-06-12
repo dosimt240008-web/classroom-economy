@@ -507,6 +507,10 @@
         await loadMyLedger().catch(()=>{});
         await refreshStudentAssetAndHoldings(currentDeposit);
 
+if (typeof drawStockChart === "function") {
+          drawStockChart();
+        }
+
       } finally {
         isRefreshingStudent = false; 
       }
