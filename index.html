@@ -1199,92 +1199,125 @@ async function refreshStockMarket() {
       } catch (err) { alert(err.message); } finally { if(btn) btn.disabled = false; }
     }
 
-// [업그레이드 완료] 성공/실패 여부와 원인을 한눈에 요약해 주는 실시간 주가 동기화 함수
-    async function syncRealStockPrices() {
-      if (!confirm("실시간 외부 주가 정보를 동기화할까요?")) return;
-      
-      // 성과를 기록할 바구니 두 개를 준비합니다.
-      const successList = [];
-      const failList = [];
-      
-      try {
-        const { data: stocks } = await sb.from('stocks').select('*');
-        if (!stocks || stocks.length === 0) return alert("⚠️ 등록된 주식 종목이 없습니다.");
-        
-        for (let s of stocks) {
-          // 1. 티커(종목 코드)가 없는 경우 실패 처리
-          if (!s.ticker || s.ticker.trim() === "") {
-            failList.push(`• ${s.name} (이유: 티커 기호 누락 ❌)`);
-            continue;
-          }
+// [완전체 버전] 강력한 프록시 + 로딩 버튼 UX + 성공/실패 결과 리포트
+  async function syncRealStockPrices() {
+    if (!confirm("실제 주식 시장의 최신 가격을 불러와 동기화하시겠습니까?\n(성공/실패 여부가 마지막에 리포트로 출력됩니다.)")) return;
+
+    // 1. 버튼 UX: 로딩 중 표시 및 중복 클릭 방지
+    const syncBtn = window.event ? window.event.currentTarget : null;
+    let originalText = "";
+    if (syncBtn) {
+      originalText = syncBtn.innerHTML;
+      syncBtn.innerHTML = "⏳ 가격 동기화 중 (잠시만 기다려주세요)...";
+      syncBtn.disabled = true;
+    }
+
+    const successList = [];
+    const failList = [];
+
+    try {
+      const { data: stockList, error } = await sb.from('stocks').select('*');
+      if (error) throw error;
+      if (!stockList || stockList.length === 0) {
+        alert("⚠️ 등록된 주식 종목이 없습니다.");
+        return;
+      }
+
+      for (let s of stockList) {
+        if (!s.ticker || s.ticker.trim() === '') {
+          failList.push(`• ${s.name} (이유: 티커 기호 누락 ❌)`);
+          continue;
+        }
+
+        try {
+          const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${s.ticker.trim()}`;
           
-          const tUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${s.ticker.trim()}`;
-          const tUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${s.ticker.trim()}`;
-          
+          // 🌟 튼튼한 예전 코드의 프록시 목록 부활!
           const proxies = [
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(tUrl2)}`,
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(tUrl1)}`
+            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
           ];
-          
-          let isSynced = false; // 이 종목이 성공했는지 체크하는 깃발
-          
-          for (let px of proxies) {
+
+          let yahooData = null;
+
+          // 3개 서버 교대 타격
+          for (let proxy of proxies) {
             try {
-              const res = await fetch(px); 
-              if (!res.ok) continue;
-              const d = await res.json();
-              
-              if (d?.chart?.result?.[0]?.meta?.regularMarketPrice) {
-                const rp = d.chart.result[0].meta.regularMarketPrice;
-                const dv = s.divider || 1;
-                const newPrice = Math.floor(rp / dv);
-                
-                // DB에 새 가격 저장
-                await sb.from('stock_prices').insert({ stock_id: s.id, price: newPrice, note: '자동 동기화' });
-                
-                // 성공 목록에 추가
-                successList.push(`• ${s.name} ➡️ ${newPrice} P`);
-                isSynced = true;
-                break; // 성공했으니 다음 프록시는 시도하지 않고 탈출
+              const response = await fetch(proxy);
+              if (response.ok) {
+                yahooData = await response.json();
+                break;
               }
             } catch (e) {
-              // 프록시 에러 시 조용히 다음 프록시로 패스
+              console.warn(`[${s.name}] 프록시 접속 지연, 다음 서버로 재시도...`);
             }
           }
-          
-          // 모든 우회 도로(프록시)를 돌았는데도 실패한 경우 실패 처리
-          if (!isSynced) {
-            failList.push(`• ${s.name} (이유: 프록시 서버 차단 또는 야후 통신 오류 ❌)`);
+
+          if (!yahooData || !yahooData.chart || !yahooData.chart.result) {
+            failList.push(`• ${s.name} (이유: 우회 서버 차단 또는 야후 통신 오류 ❌)`);
+            continue; 
           }
+
+          const realPriceInfo = yahooData.chart.result[0].meta;
+          const realMarketPrice = realPriceInfo.regularMarketPrice; 
+
+          const divideRatio = Number(s.divider) || 1;
+          const currentPrice = Math.max(1, Math.round(realMarketPrice / divideRatio)); 
+
+          // 🌟 예전 코드의 스마트한 DB 저장 로직 + 리포트 기록
+          const oldPrice = latestPriceMap.get(s.id) || 0;
+          
+          if (currentPrice > 0 && currentPrice !== oldPrice) {
+            await sb.from('stock_prices').insert([{ 
+              stock_id: s.id, 
+              price: currentPrice,
+              note: `실제 연동 (1/${divideRatio} 적용)`
+            }]);
+            successList.push(`• ${s.name} ➡️ ${currentPrice} P (변경됨)`);
+          } else {
+            // 가격이 같아서 DB를 아낀 경우에도 성공 리포트에는 표시
+            successList.push(`• ${s.name} ➡️ ${currentPrice} P (유지됨)`);
+          }
+
+        } catch (fetchErr) {
+          failList.push(`• ${s.name} (이유: 데이터 처리 중 알 수 없는 오류 ❌)`);
+          console.error(`[${s.ticker}] 오류:`, fetchErr);
         }
-        
-        // 📊 팝업창에 띄울 결과 리포트 문자열 조립
-        let reportMsg = "📊 [실시간 주가 동기화 결과 리포트]\n\n";
-        
-        if (successList.length > 0) {
-          reportMsg += "✅ 동기화 성공 종목:\n" + successList.join("\n") + "\n\n";
-        } else {
-          reportMsg += "✅ 동기화 성공 종목: 없음\n\n";
-        }
-        
-        if (failList.length > 0) {
-          reportMsg += "⚠️ 동기화 실패 종목:\n" + failList.join("\n");
-        } else {
-          reportMsg += "🎉 축하합니다! 모든 종목이 완벽하게 동기화되었습니다.";
-        }
-        
-        // 최종 리포트 안내
-        alert(reportMsg);
-        
-        // 🔄 변경된 데이터를 화면 곳곳(학생창 목록, 차트, 교사 현황판)에 즉시 동기화
-        await refreshStockMarket();
-        if (typeof drawStockChart === "function") drawStockChart();
-        if (typeof loadDropdownsForStockManager === "function") loadDropdownsForStockManager();
-        
-      } catch (e) { 
-        alert("⚠️ 시스템 오류 발생: " + e.message); 
+      }
+
+      // 📊 결과 리포트 출력
+      let reportMsg = "📊 [실시간 주가 동기화 결과 리포트]\n\n";
+      
+      if (successList.length > 0) {
+        reportMsg += "✅ 성공 종목:\n" + successList.join("\n") + "\n\n";
+      } else {
+        reportMsg += "✅ 성공 종목: 없음\n\n";
+      }
+      
+      if (failList.length > 0) {
+        reportMsg += "⚠️ 실패 종목:\n" + failList.join("\n");
+      } else {
+        reportMsg += "🎉 축하합니다! 모든 종목이 완벽하게 동기화되었습니다.";
+      }
+      
+      alert(reportMsg);
+
+      // 🔄 모든 차트와 현황판 새로고침
+      await refreshStockMarket(); 
+      if (typeof drawStockChart === "function") drawStockChart();
+      if (typeof loadDropdownsForStockManager === "function") loadDropdownsForStockManager();
+      
+    } catch (err) {
+      alert("주가 동기화 중 오류가 발생했습니다: " + err.message);
+    } finally {
+      // 2. 버튼 UX 복구: 오류가 나든 성공하든 버튼을 원래 상태로 되돌림
+      if (syncBtn) {
+        syncBtn.innerHTML = originalText;
+        syncBtn.disabled = false;
       }
     }
+  }
 
     // =========================================================
     // 🎟️ 교사 모드: 쿠폰 관리 세팅
