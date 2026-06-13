@@ -273,7 +273,18 @@
         </div>
       </div>
 
-      <div id="tea-stock" class="tabpanel">
+<div id="tea-stock" class="tabpanel">
+        
+        <div class="card" style="border: 2px solid #3b82f6; margin-bottom: 20px;">
+          <h3 style="color: #1d4ed8; margin-top:0;">⏰ 거래장 개장/마감 관리</h3>
+          <div class="row">
+            <button id="openMarket" onclick="updateMarketState(true)" style="background-color: #3b82f6;">거래장 열기</button>
+            <button class="secondary" id="closeMarket" onclick="updateMarketState(false)">거래장 닫기</button>
+            <input id="marketMsg" placeholder="학생에게 보일 안내(예: 쉬는시간 거래!)" style="min-width:260px; flex:1;" />
+            <span class="muted" style="margin-left: 10px; font-size: 1.1em;">현재 상태: <b id="marketStateLabel" style="color: #e11d48;">-</b></span>
+          </div>
+        </div>
+
         <div class="card" style="border: 2px solid #10b981; margin-bottom: 20px;">
           <h4 style="color: #047857; margin-top:0;">🌐 실제 외부 주식 시장 연동</h4>
           <div class="row">
@@ -281,16 +292,18 @@
             <button onclick="updateStockDivider()" style="background-color: #8b5cf6;">⚙️ 종목별 비율(Divider) 설정</button>
           </div>
         </div>
+        
         <div class="card">
           <h3>📈 가상 주가 수동 공시</h3>
           <div class="row">
-<div id="teaCurrentStockPrices"></div>
+            <div id="teaCurrentStockPrices"></div>
             <select id="tPriceStockSelect"></select>
             <input type="number" id="tNewPrice" placeholder="새로운 주가" style="width:120px;" />
             <input type="text" id="tPriceNote" placeholder="메모" style="width:250px;" />
             <button onclick="updateStockPrice()">📢 새 주가 공시</button>
           </div>
         </div>
+        
         <div class="card" style="border: 2px solid #b00020;">
           <h4 style="color: #b00020; margin-top:0;">⚖️ 학생 보유 주식 강제 조정</h4>
           <div class="row">
@@ -405,7 +418,15 @@
       document.getElementById(tabId).classList.add('active');
     }
 
-    window.onload = () => switchView('login');
+window.onload = async () => {
+      // 1. 처음 사이트 켜질 때 주식 장 오픈/마감 상태를 서버에서 불러옵니다.
+      if (typeof loadMarketState === "function") {
+        await loadMarketState();
+      }
+      
+      // 2. 기존에 있던 로그인 화면으로 전환하는 명령입니다.
+      switchView('login');
+    };
 
     // =========================================================
     // ⏱️ 예금 이자 카운트다운 타이머
@@ -876,21 +897,6 @@ if (typeof drawStockChart === "function") {
       loadTeaStudents(); loadJobAssignList();
     }
 
-    document.getElementById("assignJob").onclick = async () => {
-      const studentId = document.getElementById("tStudentJob").value;
-      const jobId = document.getElementById("tJob").value;
-      if (!studentId || !jobId) return alert("학생과 직업을 모두 선택해 주세요.");
-      const btn = document.getElementById("assignJob");
-      btn.disabled = true; btn.innerHTML = "⏳ 처리 중...";
-      try {
-        const { data: existing } = await sb.from("student_jobs").select("id").eq("student_id", studentId).maybeSingle();
-        if (existing) await sb.from("student_jobs").update({ job_id: jobId }).eq("id", existing.id);
-        else await sb.from("student_jobs").insert({ student_id: studentId, job_id: jobId });
-        alert("직업 발령 완료!");
-        loadTeaStudents(); loadTeaJobs();
-      } catch (e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "배정 / 변경하기"; }
-    };
-
     async function loadTeaJobs() {
       if (!sb) return;
       const { data, error } = await sb.from("jobs").select("*").order("id");
@@ -966,6 +972,63 @@ if (typeof drawStockChart === "function") {
         loadTeaStudents(); alert(`총 ${count}명 학생에게 주급 지급 완료!`);
       } catch (err) { alert(err.message); }
     }
+
+// =========================================================
+  // ⏰ 주식 거래장 개장/마감 상태 관리 (새로 추가된 부분)
+  // =========================================================
+  let marketOpen = false;
+  let marketMessage = "";
+
+  async function loadMarketState() {
+    try {
+      const { data, error } = await sb.from("market_state").select("*").eq("id", 1).single();
+      if (error) throw error;
+      marketOpen = !!data.is_open;
+      marketMessage = data.message || "지금은 거래 시간이 아닙니다.";
+      renderMarketStateUI();
+      renderMarketBanner();
+    } catch (err) {
+      console.error("시장 상태 불러오기 실패:", err);
+    }
+  }
+
+  function renderMarketBanner(){
+    const banner = document.getElementById("marketBanner");
+    if (!banner) return;
+    banner.classList.remove("open","closed");
+    banner.classList.add(marketOpen ? "open" : "closed");
+    
+    const bannerText = document.getElementById("marketBannerText");
+    const bannerPill = document.getElementById("marketBannerPill");
+    if (bannerText) bannerText.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
+    if (bannerPill) bannerPill.textContent = marketOpen ? "OPEN" : "CLOSED";
+  }
+
+  function renderMarketStateUI() {
+    const st1 = document.getElementById("marketStateLabel");
+    const st2 = document.getElementById("marketStateStudent");
+    if (st1) st1.textContent = marketOpen ? "OPEN" : "CLOSED";
+    if (st2) st2.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
+
+    const buyBtn = document.getElementById("buyStock");
+    const sellBtn = document.getElementById("sellStock");
+    if (buyBtn) buyBtn.disabled = !marketOpen || !me;
+    if (sellBtn) sellBtn.disabled = !marketOpen || !me;
+  }
+
+  async function updateMarketState(isOpen) {
+    const msgInput = document.getElementById("marketMsg");
+    const msg = msgInput ? msgInput.value : "";
+
+    try {
+      const { error } = await sb.from("market_state").update({ is_open: isOpen, message: msg }).eq("id", 1);
+      if (error) throw error;
+      alert(isOpen ? "✅ 주식 거래장이 열렸습니다!" : "🛑 주식 거래장이 마감되었습니다!");
+      await loadMarketState();
+    } catch (err) {
+      alert("시장 상태 변경 중 오류가 발생했습니다: " + err.message);
+    }
+  }
 
     // =========================================================
     // 📈 주식 시장 로직 (그래프 + 프록시 연동)
@@ -1111,8 +1174,18 @@ async function updateStockPrice() {
       } catch (error) {}
     }
 
-async function refreshStockMarket() {
+// =========================================================
+    // 📈 주식 화면 그리기 (완벽 복구 버전)
+    // =========================================================
+    async function refreshStockMarket() {
       if (!sb) return;
+
+      // 1. 장 상태 확인
+      if (typeof loadMarketState === "function") {
+        await loadMarketState();
+      }
+
+      // 2. 주식 데이터 불러오기
       const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true).order("id");
       stockCache = stocks || [];
       const listDiv = document.getElementById("stockList");
@@ -1131,18 +1204,23 @@ async function refreshStockMarket() {
           if(hData) hData.forEach(h => myHoldMap.set(h.stock_id, {shares: h.shares, avg_cost: h.avg_cost}));
       }
 
-      // 🎨 바둑판(Grid) 스타일 적용
+      // 3. 바둑판(Grid) 스타일 적용
       listDiv.style.display = "grid";
       listDiv.style.gridTemplateColumns = "repeat(auto-fill, minmax(260px, 1fr))";
       listDiv.style.gap = "16px";
       listDiv.innerHTML = "";
 
+      // 4. 학생 화면에 버튼과 카드 그리기
       for (const st of stockCache) {
         const price = latestPriceMap.get(st.id) || 10; 
         const myHold = myHoldMap.get(st.id);
         const myShares = myHold ? myHold.shares : 0;
 
-        // 예쁜 카드 형태의 HTML로 변경
+        // 장이 닫혔으면(marketOpen == false) 버튼 회색 및 비활성화
+        const btnDisabled = !marketOpen ? "disabled" : "";
+        const buyColor = !marketOpen ? "#9ca3af" : "#0b7"; 
+        const sellColor = !marketOpen ? "#9ca3af" : "var(--danger)"; 
+
         listDiv.innerHTML += `
           <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fafafa; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
@@ -1158,9 +1236,9 @@ async function refreshStockMarket() {
                 ${price} P
               </div>
               <div class="row" style="margin:0; gap:8px;">
-                <input type="number" id="tradeQty_${st.id}" placeholder="수량" style="width:70px; padding:8px;" min="1" value="1" />
-                <button onclick="tradeStock(${st.id}, 'buy', ${price}, '${st.name}')" style="background:#0b7; flex:1; padding:8px;">매수</button>
-                <button onclick="tradeStock(${st.id}, 'sell', ${price}, '${st.name}')" style="background:var(--danger); flex:1; padding:8px;">매도</button>
+                <input type="number" id="tradeQty_${st.id}" placeholder="수량" style="width:70px; padding:8px;" min="1" value="1" ${btnDisabled} />
+                <button onclick="tradeStock(${st.id}, 'buy', ${price}, '${st.name}')" ${btnDisabled} style="background:${buyColor}; flex:1; padding:8px; color:white; border:none; border-radius:4px;">매수</button>
+                <button onclick="tradeStock(${st.id}, 'sell', ${price}, '${st.name}')" ${btnDisabled} style="background:${sellColor}; flex:1; padding:8px; color:white; border:none; border-radius:4px;">매도</button>
               </div>
             </div>
           </div>
@@ -1168,8 +1246,17 @@ async function refreshStockMarket() {
       }
     }
 
-    async function tradeStock(stockId, side, price, stockName) {
+async function tradeStock(stockId, side, price, stockName) {
       if (!me) return alert("로그인 상태에서만 가능합니다.");
+
+      // ✨ [강력한 자물쇠 추가] 거래를 시작하기 직전에 장이 열려있는지 DB에서 최종 확인!
+      try {
+        const { data: mState } = await sb.from("market_state").select("is_open").eq("id", 1).single();
+        if (!mState || !mState.is_open) return alert("🛑 지금은 주식 거래 시간이 아닙니다! (장 마감)");
+      } catch(e) {
+        console.error("장 상태 확인 실패", e);
+      }
+
       const qty = parseInt(document.getElementById(`tradeQty_${stockId}`).value, 10);
       if (!qty || qty <= 0) return alert("올바른 수량을 기입해 주세요.");
 
