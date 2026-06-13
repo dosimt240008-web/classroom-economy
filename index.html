@@ -210,6 +210,30 @@
       </div>
 
       <div id="tea-dashboard" class="tabpanel">
+<div class="card" style="border: 2px solid #10b981; margin-bottom: 20px;">
+          <h4 style="color: #047857; margin-top:0;">🏦 학급 은행 금리(예금/대출) 설정</h4>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">
+            설정한 이자율(%)은 학생들의 이자 계산 시 즉시 반영됩니다.
+          </p>
+          
+          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="font-size: 14px;">예금 이자율:</strong>
+              <input type="number" id="tDepositRate" placeholder="20" style="width:70px; text-align:right; padding:6px; border:1px solid var(--border); border-radius:4px;" step="0.1" min="0" />
+              <span style="font-weight: bold;">%</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="font-size: 14px;">대출 이자율:</strong>
+              <input type="number" id="tLoanRate" placeholder="10" style="width:70px; text-align:right; padding:6px; border:1px solid var(--border); border-radius:4px;" step="0.1" min="0" />
+              <span style="font-weight: bold;">%</span>
+            </div>
+
+            <button onclick="updateBankRates()" style="background-color: #10b981; color: white; padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer;">
+              금리 일괄 적용
+            </button>
+          </div>
+        </div>
         <div class="card">
           <h3>👥 전체 학생 자산부</h3>
           <div class="row">
@@ -484,11 +508,27 @@ window.onload = async () => {
           const diffTime = now - lastDate;
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
 
+          // ----------------------------------------------------
+          // 💡 refreshStudent() 함수 내부의 예금 이자 계산 로직 수정
           if (diffDays >= 7) { 
             const weeksPassed = Math.floor(diffDays / 7); 
             if (currentDeposit > 0) { 
-              const weeklyRate = 0.20; 
-              const interest = Math.floor(currentDeposit * weeklyRate * weeksPassed);
+              
+              // ✅ 새롭게 교체할 코드: deposit_rate를 불러옵니다.
+              let weeklyDepositRate = 0.20; // 기본값 20%
+              try {
+                const { data: configData } = await sb.from("bank_config").select("deposit_rate").eq("id", 1).maybeSingle();
+                if (configData && configData.deposit_rate !== undefined) {
+                  weeklyDepositRate = configData.deposit_rate / 100; // 20 입력 시 0.20으로 변환
+                }
+              } catch (e) {
+                console.error("예금 이자율 조회 실패, 기본값(20%) 적용");
+              }
+
+              // 예금 이자 계산
+              const interest = Math.floor(currentDeposit * weeklyDepositRate * weeksPassed);
+              // 이후 if (interest > 0) { ... } 기존 코드 그대로 유지
+          // ----------------------------------------------------
               if (interest > 0) {
                 currentDeposit += interest; 
                 const daysToAdd = weeksPassed * 7;
@@ -697,6 +737,7 @@ if (typeof drawStockChart === "function") {
           loadDropdownsForStockManager(); 
           loadDropdownsForCouponManager(); 
           loadTeacherBankStudentDropdown();
+          loadBankRates();
         } else { 
           alert("❌ 암호 오류! 올바른 비밀번호를 입력하세요."); 
         }
@@ -779,6 +820,53 @@ if (typeof drawStockChart === "function") {
         loadTeaStudents(); 
       } catch (err) { alert(err.message); } finally { btn.disabled = false; }
     }
+
+// =========================================================
+// 🏦 학급 은행 예금/대출 금리 설정 로직
+// =========================================================
+async function loadBankRates() {
+  if (!sb) return;
+  try {
+    // bank_config 테이블에서 id가 1인 설정값을 가져옴 (예금, 대출 컬럼 모두)
+    const { data, error } = await sb.from("bank_config").select("deposit_rate, loan_rate").eq("id", 1).single();
+    if (error) throw error;
+
+    // 입력창에 값 세팅
+    if (data) {
+      if (data.deposit_rate !== undefined) document.getElementById("tDepositRate").value = data.deposit_rate;
+      if (data.loan_rate !== undefined) document.getElementById("tLoanRate").value = data.loan_rate;
+    }
+  } catch (err) {
+    console.error("은행 금리 불러오기 실패:", err);
+  }
+}
+
+async function updateBankRates() {
+  const depositInput = document.getElementById("tDepositRate").value;
+  const loanInput = document.getElementById("tLoanRate").value;
+
+  if (depositInput === "" || Number(depositInput) < 0 || loanInput === "" || Number(loanInput) < 0) {
+    return alert("올바른 예금 및 대출 이자율을 입력해 주세요.");
+  }
+
+  try {
+    // 🕒 현재 시간을 ISO 포맷(DB가 좋아하는 표준 시간 양식)으로 가져옵니다.
+    const nowTime = new Date().toISOString();
+
+    const { error } = await sb.from("bank_config").upsert({ 
+      id: 1, 
+      deposit_rate: Number(depositInput),
+      loan_rate: Number(loanInput),
+      updated_at: nowTime  // ✨ [추가] 금리가 변경될 때 현재 시간도 같이 덮어씌웁니다!
+    });
+    
+    if (error) throw error;
+    alert(`🏦 은행 금리가 성공적으로 변경되었습니다!\n\n✅ 예금 이자율: ${depositInput}%\n✅ 대출 이자율: ${loanInput}%`);
+    
+  } catch (err) {
+    alert("금리 변경 중 오류가 발생했습니다: " + err.message);
+  }
+}
 
     // =========================================================
     // 👨‍🏫 교사 모드: 학생, 직업, 주급 일괄 관리 로직 (완전 복구!)
