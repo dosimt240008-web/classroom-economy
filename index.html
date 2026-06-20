@@ -164,30 +164,18 @@
 
           </div>
           
-          <div class="card" style="background: var(--soft); border: 1px solid #bfdbfe; box-shadow: var(--shadow); padding: 20px; align-self: start;">
+<div class="card" style="background: var(--soft); border: 1px solid #bfdbfe; box-shadow: var(--shadow); padding: 20px; align-self: start;">
             <h3 style="margin: 0 0 16px 0; color: #1d4ed8; font-size: 18px; display: flex; align-items: center; gap: 6px;">
               💼 내 주식 지갑
             </h3>
             
-            <div style="background: #fff; border-radius: 8px; border: 1px solid #bfdbfe; overflow: hidden;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <thead>
-                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: var(--text);">
-                    <th style="padding: 12px; text-align: left; font-weight: 600;">종목명</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">수량</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">총 평가액</th>
-                  </tr>
-                </thead>
-                <tbody id="my-holding-stocks-list">
-                  <tr>
-                    <td colspan="3" style="text-align: center; padding: 30px 10px; color: var(--muted);">
-                      <div style="font-size: 24px; margin-bottom: 8px;">텅~</div>
-                      보유 중인 주식이 없습니다.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div id="myStockList">
+              <div style="text-align: center; padding: 30px 10px; color: var(--muted); background: #fff; border-radius: 8px; border: 1px solid #bfdbfe;">
+                <div style="font-size: 24px; margin-bottom: 8px;">텅~</div>
+                보유 중인 주식이 없습니다.
+              </div>
             </div>
+            
           </div>
         </div>
       </div>
@@ -363,6 +351,15 @@
             <button id="btnGiveCoupon" style="background-color: #0b7;">지급하기</button>
           </div>
         </div>
+<!-- 교사 쿠폰 탭 하단에 추가할 전체 쿠폰 목록 영역 -->
+      <hr style="margin: 25px 0 15px 0; border: 0; border-top: 1px solid var(--border);" />
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0;">🏷️ 등록된 상점 쿠폰 목록 및 가격 관리</h3>
+        <button onclick="loadAdminCoupons()" style="font-size: 12px; padding: 4px 8px;">🔄 새로고침</button>
+      </div>
+      <div id="adminCouponListContainer">
+        <p class="muted">쿠폰 목록을 불러오는 중...</p>
+      </div>
       </div>
 
     </div>
@@ -573,6 +570,8 @@ window.onload = async () => {
         await loadMyLedger().catch(()=>{});
         await refreshStudentAssetAndHoldings(currentDeposit);
 
+if (typeof loadMyStocks === "function") await loadMyStocks();
+
 if (typeof drawStockChart === "function") {
           drawStockChart();
         }
@@ -581,6 +580,7 @@ if (typeof drawStockChart === "function") {
         isRefreshingStudent = false; 
       }
     }
+ 
 
     async function refreshStudentAssetAndHoldings(bankDepositAmt) {
       if (!me) return;
@@ -1624,6 +1624,95 @@ function showAllStocks() {
         giveCouponSelect.innerHTML = '<option value="">쿠폰 선택...</option>';
         allCoupons?.forEach(c => giveCouponSelect.innerHTML += `<option value="${c.id}">${c.title} (${c.price}P)</option>`);
       }
+await loadAdminCoupons();
+    }
+
+// 📝 [관리자용] 쿠폰 가격 수정 함수
+    async function editCouponPrice(couponId, currentPrice, couponTitle) {
+      // 1. 선생님께 새로운 가격을 입력받습니다.
+      const newPriceStr = prompt(`'${couponTitle}' 쿠폰의 새로운 가격을 입력하세요.\n(현재 가격: ${currentPrice}P)`, currentPrice);
+      
+      // 취소를 누르거나 아무것도 입력하지 않으면 종료
+      if (newPriceStr === null || newPriceStr.trim() === "") return; 
+
+      const newPrice = parseInt(newPriceStr, 10);
+      if (isNaN(newPrice) || newPrice < 0) {
+        return alert("올바른 숫자(0 이상)를 입력해 주세요.");
+      }
+
+      try {
+        // 2. Supabase DB의 coupons 테이블에서 해당 쿠폰의 가격(price)을 업데이트합니다.
+        const { error } = await sb.from("coupons").update({ price: newPrice }).eq("id", couponId);
+        if (error) throw error;
+
+        alert(`✅ '${couponTitle}'의 가격이 ${newPrice}P로 성공적으로 수정되었습니다!`);
+        
+        // 3. 변경된 가격을 교사 화면에 즉시 다시 그려줍니다.
+        if (typeof refreshAdminCoupons === "function") {
+          await refreshAdminCoupons();
+        } else if (typeof loadAdminCoupons === "function") {
+          await loadAdminCoupons();
+        }
+      } catch (err) {
+        console.error("쿠폰 가격 수정 중 오류:", err);
+        alert("가격 수정 중 오류가 발생했습니다.");
+      }
+    }
+
+// 📋 [관리자용] 전체 쿠폰 목록을 표(Table)로 그려주는 함수
+    async function loadAdminCoupons() {
+      if (!sb) return;
+      const container = document.getElementById("adminCouponListContainer");
+      if (!container) return;
+
+      try {
+        const { data: coupons, error } = await sb.from("coupons").select("*").order("price", { ascending: true });
+        if (error) throw error;
+
+        if (!coupons || coupons.length === 0) {
+          container.innerHTML = "<p class='muted'>등록된 쿠폰이 없습니다.</p>";
+          return;
+        }
+
+        let html = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.95rem; text-align: left;">
+            <thead>
+              <tr style="background-color: var(--bg); border-bottom: 2px solid var(--border);">
+                <th style="padding: 8px 10px;">쿠폰명</th>
+                <th style="padding: 8px 10px;">설명</th>
+                <th style="padding: 8px 10px;">상점 정가</th>
+                <th style="padding: 8px 10px;">상태</th>
+                <th style="padding: 8px 10px; text-align: center;">관리</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        for (const c of coupons) {
+          const statusBadge = c.is_active 
+            ? '<span style="color: #16a34a; font-weight: bold;">판매중</span>' 
+            : '<span style="color: #dc2626;">숨김</span>';
+
+          html += `
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 8px 10px;"><strong>${c.title}</strong></td>
+              <td style="padding: 8px 10px; color: var(--muted);">${c.description || ""}</td>
+              <td style="padding: 8px 10px; color: var(--accent); font-weight: bold;">${c.price.toLocaleString()} P</td>
+              <td style="padding: 8px 10px;">${statusBadge}</td>
+              <td style="padding: 8px 10px; text-align: center;">
+                <button onclick="editCouponPrice(${c.id}, ${c.price}, '${c.title}')" style="background: #eab308; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">가격 수정</button>
+              </td>
+            </tr>
+          `;
+        }
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+
+      } catch (err) {
+        console.error("교사용 쿠폰 목록 로드 실패:", err);
+        container.innerHTML = `<span style="color: red;">쿠폰 목록을 불러오는 중 오류가 발생했습니다.</span>`;
+      }
     }
 
     // =========================================================
@@ -1687,9 +1776,106 @@ function showAllStocks() {
                 정가: ${c.price}P + 부가세: ${vat}P = <strong style="color:var(--accent);">${total}P</strong>
               </div>
             </div>
-            <button onclick="buyCoupon(${c.id}, ${total}, '${c.title}')" style="background:var(--accent);">구매</button>
+            <button onclick="buyCoupon(${c.id}, ${c.price}, '${c.title}')" style="background:var(--accent);">구매</button>
           </div>
         `;
+      }
+    }
+
+async function loadMyStocks() {
+      const container = document.getElementById("myStockList"); 
+      if (!container || !me) return;
+
+      try {
+        // ✨ [핵심 수정] 뒤에 .gt("shares", 0) 을 추가해서 수량이 0보다 큰 것만 가져옵니다!
+        const { data: myHoldings, error: hError } = await sb.from("holdings")
+          .select("*, stocks(name)")
+          .eq("student_id", me.id)
+          .gt("shares", 0); // <-- 요기가 비법입니다!
+
+        if (hError) throw hError;
+
+        // 보유한 주식이 없거나 모두 팔아서 0개일 때의 화면 (선생님의 예쁜 '텅~' UI 적용)
+        if (!myHoldings || myHoldings.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 30px 10px; color: var(--muted); background: #fff; border-radius: 8px; border: 1px solid #bfdbfe;">
+              <div style="font-size: 24px; margin-bottom: 8px;">텅~</div>
+              보유 중인 주식이 없습니다.
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = "⏳ 실시간 손익 계산 중...";
+        let htmlContent = "";
+
+        // 학생이 가진 주식들을 하나씩 돌면서 시세 비교
+        for (const h of myHoldings) {
+          const stockInfo = h.stocks;
+          if (!stockInfo) continue;
+          
+          const qty = h.shares;
+          // (혹시 모를 에러 방지용 안전장치) 수량이 0 이하면 건너뜁니다.
+          if (qty <= 0) continue;
+
+          // 최신 시세 불러오기
+          const { data: latestPriceRow } = await sb.from("stock_prices")
+            .select("price")
+            .eq("stock_id", h.stock_id)
+            .order("effective_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          const name = stockInfo.name;
+          const avgCost = h.avg_cost || 0;
+          const currentPrice = latestPriceRow ? latestPriceRow.price : avgCost; 
+
+          // 🧮 손익 계산
+          const totalInvested = avgCost * qty;                 
+          const totalCurrentValue = currentPrice * qty;        
+          const profitLoss = totalCurrentValue - totalInvested;   
+          const profitRate = totalInvested > 0 ? ((profitLoss / totalInvested) * 100).toFixed(2) : "0.00";
+
+          // 🎨 색상 지정
+          let color = "#334155"; 
+          let prefix = "";
+          
+          if (profitLoss > 0) {
+            color = "#dc2626"; // 이득 (빨강)
+            prefix = "+";
+          } else if (profitLoss < 0) {
+            color = "#2563eb"; // 손해 (파랑)
+          }
+
+          // HTML 그리기
+          htmlContent += `
+            <div style="background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 1.1em; font-weight: bold; color: #1e293b;">📊 ${name}</span>
+                <span style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">${qty}주 보유</span>
+              </div>
+              
+              <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #64748b; margin-bottom: 4px;">
+                <span>구매 평단가: ${avgCost.toLocaleString()}P</span>
+                <span>현재 주가: ${currentPrice.toLocaleString()}P</span>
+              </div>
+              
+              <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 8px 0;">
+              
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.9em; color: #475569; font-weight: bold;">평가 손익:</span>
+                <span style="font-size: 1.1em; font-weight: bold; color: ${color};">
+                  ${prefix}${profitLoss.toLocaleString()}P (${prefix}${profitRate}%)
+                </span>
+              </div>
+            </div>
+          `;
+        }
+
+        container.innerHTML = htmlContent;
+
+      } catch (e) {
+        console.error("주식 손익 조회 중 예외 발생:", e);
+        container.innerHTML = `<span style="color: red;">⚠️ 주식 손익 정보를 불러오는 중 오류가 발생했습니다.</span>`;
       }
     }
 
