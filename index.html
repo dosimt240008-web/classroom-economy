@@ -39,6 +39,14 @@
     .tabs{ display:flex; gap:8px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px;}
     .tab{ background: none; border: none; font-size: 1rem; color: var(--muted); cursor: pointer; padding: 5px 10px; font-weight: bold; }
     .tab.active{ color: var(--accent); border-bottom: 3px solid var(--accent); margin-bottom: -12px;}
+
+    /* 모바일 및 태블릿 화면 반응형 스타일 */
+    @media (max-width: 768px) {
+      .app { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 16px; }
+      .main { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -75,8 +83,9 @@
         <div class="card" style="max-width:400px; margin: 80px auto;">
           <h3>🔑 곰코노미 로그인</h3>
           <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
-            <input type="number" id="loginNo" placeholder="출석번호 (예: 5)" />
-            <input type="password" id="loginPin" placeholder="비밀번호 PIN" />
+            <!-- 🌟 [보완] 출석번호 입력 후 엔터 치면 비밀번호 입력창으로 포커스 이동 -->
+            <input type="number" id="loginNo" placeholder="출석번호 (예: 5)" onkeydown="if(event.key==='Enter') document.getElementById('loginPin').focus()" />
+            <input type="password" id="loginPin" placeholder="비밀번호 PIN" onkeydown="if(event.key==='Enter') handleLogin()" />
             <button onclick="handleLogin()">로그인하기</button>
             <div style="text-align:center; margin-top:12px;">
               <a href="#" onclick="enterTeacherMode()" style="font-size:0.85rem; color:var(--muted);">⚙️ 교사 권한으로 접속</a>
@@ -108,6 +117,23 @@
               <div class="muted">💼 내 직업 / 주급</div>
               <div style="font-size:1.4rem; font-weight:700; color:#15803d; margin-top:8px;" id="stuJob">시민 (8P)</div>
             </div>
+          </div>
+
+          <div class="card" style="margin-top: 24px;">
+            <h3>💼 내 보유 주식 상세 목록</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>종목명</th>
+                  <th style="text-align:right;">보유 수량</th>
+                  <th style="text-align:right;">현재 주가</th>
+                  <th style="text-align:right;">총 평가액</th>
+                </tr>
+              </thead>
+              <tbody id="my-holding-stocks-list">
+                <tr><td colspan="4" style="padding:15px; text-align:center; color:var(--muted);">보유 중인 주식이 없습니다.</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -146,7 +172,6 @@
             <h2 style="margin: 0; color: var(--text);">📈 곰코노미 증권거래소</h2>
             <p style="margin: 4px 0 0 0; font-size: 14px; color: var(--muted);">현재 시세를 분석하고 현명하게 투자해보세요.</p>
           </div>
-          <!-- 🌟 [추가 보완] 학생용 거래장 실시간 상태 배너 -->
           <div style="background: var(--soft); border: 1px solid #bfdbfe; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
             📢 <span id="marketStateStudent" style="font-weight: bold; color: var(--accent);">거래 상태 조회 중...</span>
           </div>
@@ -796,7 +821,13 @@
             currentDeposit -= amount;
         }
 
-        await sb.from('bank_accounts').update({ deposit_balance: currentDeposit, updated_at: new Date().toISOString()}).eq('student_id', studentId);
+        // .upsert로 미개설 학생 통장 자동 생성
+        await sb.from('bank_accounts').upsert({ 
+          student_id: studentId, 
+          deposit_balance: currentDeposit, 
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'student_id' });
+
         await sb.from('ledger').insert([{ student_id: studentId, type: "adjust", amount: 0, memo: `[교사 은행강제조정] ${type==='deposit'?'+':'-'}${amount}P / ${note}` }]);
 
         alert("학생 은행 잔고가 강제 업데이트 되었습니다.");
@@ -892,7 +923,7 @@
       if (nextDep < 0) return alert("통장 잔고는 0 미만일 수 없습니다.");
       
       try {
-        await sb.from("bank_accounts").update({ deposit_balance: nextDep, updated_at: new Date().toISOString() }).eq("student_id", id);
+        await sb.from("bank_accounts").upsert({ student_id: id, deposit_balance: nextDep, updated_at: new Date().toISOString() }, { onConflict: 'student_id' });
         await sb.from("ledger").insert({ student_id: id, type: "adjust", amount: 0, memo: `[교사 통장 수동 조절] ${amount > 0 ? '+' : ''}${amount}P` });
         alert(`✅ ${name} 학생의 통장 잔고 수정 완료!`);
         loadTeaStudents();
@@ -938,26 +969,41 @@
 
     async function saveStudent() {
       const no = parseInt(document.getElementById("mStuNo").value, 10);
-      const name = document.getElementById("mStuName").value;
-      const pin = document.getElementById("mStuPin").value;
+      const name = document.getElementById("mStuName").value.trim();
+      const pin = document.getElementById("mStuPin").value.trim();
       const initBal = parseInt(document.getElementById("mStuBal").value, 10) || 0;
 
-      if (!no || !name || !pin) return alert("입력 오류!");
+      if (!no || !name || !pin) return alert("출석번호, 이름, 비밀번호를 올바르게 입력해 주세요!");
       try {
         if (window.editTargetStuId) {
           await sb.from("students").update({ student_no: no, name, pin }).eq("id", window.editTargetStuId);
         } else {
-          const { data: newStu } = await sb.from("students").insert({ student_no: no, name, pin, balance: initBal }).select().single();
-          if(newStu) await sb.from("bank_accounts").insert({ student_id: newStu.id, deposit_balance: 0, loan_balance: 0 });
+          // 신규 등록 시 출석번호 중복 미리 검사
+          const { data: dup } = await sb.from("students").select("id").eq("student_no", no).maybeSingle();
+          if (dup) return alert(`⚠️ 이미 출석번호 ${no}번 학생이 등록되어 있습니다!`);
+
+          const { data: newStu, error: insErr } = await sb.from("students").insert({ student_no: no, name, pin, balance: initBal }).select().single();
+          if (insErr) throw insErr;
+          if (newStu) await sb.from("bank_accounts").insert({ student_id: newStu.id, deposit_balance: 0, loan_balance: 0 });
         }
         document.getElementById("studentModal").close(); loadTeaStudents(); loadJobAssignList();
       } catch(e) { alert("에러: "+e.message); }
     }
 
     async function deleteStudent(id) {
-      if(!confirm("삭제할까요?")) return;
-      await sb.from("students").delete().eq("id", id);
-      loadTeaStudents(); loadJobAssignList();
+      if(!confirm("해당 학생을 삭제하시겠습니까?\n(통장, 주식, 쿠폰, 용돈기입장 기록도 안전하게 함께 정리됩니다)")) return;
+      try {
+        // 🌟 [보완] 용돈기입장(ledger) 데이터도 사전에 정리하여 외래키 DB 에러 원천 방지
+        await sb.from("ledger").delete().eq("student_id", id);
+        await sb.from("bank_accounts").delete().eq("student_id", id);
+        await sb.from("holdings").delete().eq("student_id", id);
+        await sb.from("student_coupons").delete().eq("student_id", id);
+        await sb.from("student_jobs").delete().eq("student_id", id);
+        await sb.from("students").delete().eq("id", id);
+
+        alert("학생 정보가 정상적으로 삭제되었습니다.");
+        loadTeaStudents(); loadJobAssignList();
+      } catch(e) { alert("삭제 오류: " + e.message); }
     }
 
     async function loadTeaJobs() {
@@ -1025,6 +1071,7 @@
         for (const record of assigned) {
           const { data: job } = await sb.from("jobs").select("weekly_wage, title").eq("id", record.job_id).single();
           if (job && job.weekly_wage > 0) {
+            // 주급 지급 시 실시간 최신 잔액 재조회하여 덮어쓰기 오차 방지
             const { data: st } = await sb.from("students").select("balance").eq("id", record.student_id).single();
             const newBal = (st ? st.balance : 0) + job.weekly_wage;
             await sb.from("students").update({ balance: newBal }).eq("id", record.student_id);
@@ -1072,11 +1119,6 @@
       const st2 = document.getElementById("marketStateStudent");
       if (st1) st1.textContent = marketOpen ? "OPEN" : "CLOSED";
       if (st2) st2.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
-
-      const buyBtn = document.getElementById("buyStock");
-      const sellBtn = document.getElementById("sellStock");
-      if (buyBtn) buyBtn.disabled = !marketOpen || !me;
-      if (sellBtn) sellBtn.disabled = !marketOpen || !me;
     }
 
     async function updateMarketState(isOpen) {
@@ -1207,8 +1249,18 @@
       try {
         const { data: oldHold } = await sb.from("holdings").select("avg_cost").eq("student_id", stuId).eq("stock_id", stkId).maybeSingle();
         const cost = oldHold ? oldHold.avg_cost : 10;
-        if (ns === 0) await sb.from("holdings").delete().eq("student_id", stuId).eq("stock_id", stkId);
-        else await sb.from("holdings").upsert({ student_id: stuId, stock_id: stkId, shares: ns, avg_cost: cost, updated_at: new Date().toISOString() });
+        if (ns === 0) {
+          await sb.from("holdings").delete().eq("student_id", stuId).eq("stock_id", stkId);
+        } else {
+          // 🌟 [보완] 복합 키 기준 조건 명시로 덮어쓰기 충돌 완벽 예방
+          await sb.from("holdings").upsert({ 
+            student_id: stuId, 
+            stock_id: stkId, 
+            shares: ns, 
+            avg_cost: cost, 
+            updated_at: new Date().toISOString() 
+          }, { onConflict: 'student_id, stock_id' });
+        }
         await sb.from("ledger").insert({ student_id: stuId, type: "adjust", amount: 0, memo: `[교사 주식 수동 조정] (최종: ${ns}주)` });
         alert("주식 보유량이 변경되었습니다.");
         document.getElementById("tManageStockShares").value = "";
@@ -1250,11 +1302,7 @@
       if (btn) btn.disabled = true;
 
       try {
-        const { data: maxStock } = await sb.from("stocks").select("id").order("id", { ascending: false }).limit(1).maybeSingle();
-        const nextId = maxStock ? maxStock.id + 1 : 1;
-
         const { data: newStock, error: stockErr } = await sb.from("stocks").insert({
-          id: nextId, 
           symbol: ticker ? ticker : name,
           name: name,
           ticker: ticker || null,
@@ -1394,6 +1442,7 @@
 
         if (window.myStockChart) {
           window.myStockChart.destroy();
+          window.myStockChart = null;
         }
         
         window.myStockChart = new Chart(canvas, { 
@@ -1547,27 +1596,28 @@
             shares: newShares, 
             avg_cost: newAvgCost, 
             updated_at: new Date().toISOString() 
-          });
+          }, { onConflict: 'student_id, stock_id' });
           await sb.from("ledger").insert({ student_id: me.id, type: "trade_buy", amount: -total, memo: `[매수] ${stockName} ${qty}주` });
           alert(`🎉 성공! ${stockName} ${qty}주 인수!`);
 
         } else {
+          // 주식 매도 시: 주식 수량 차감을 먼저 성공시킨 후 지갑 돈 지급 (무료 포인트 복사 방지)
           if (currentShares < qty) {
             alert(`보유 주식 수량이 부족합니다.`);
             return;
           }
           const newShares = currentShares - qty;
-          
-          const { data: dbUser } = await sb.from("students").select("balance").eq("id", me.id).single();
-          if (!dbUser) return alert("잔액 정보를 불러올 수 없습니다.");
-
-          await sb.from("students").update({ balance: dbUser.balance + total }).eq("id", me.id);
 
           if (newShares === 0) {
             await sb.from("holdings").delete().eq("student_id", me.id).eq("stock_id", stockId);
           } else {
             await sb.from("holdings").update({ shares: newShares }).eq("student_id", me.id).eq("stock_id", stockId);
           }
+          
+          const { data: dbUser } = await sb.from("students").select("balance").eq("id", me.id).single();
+          if (!dbUser) return alert("잔액 정보를 불러올 수 없습니다.");
+
+          await sb.from("students").update({ balance: dbUser.balance + total }).eq("id", me.id);
           await sb.from("ledger").insert({ student_id: me.id, type: "trade_sell", amount: total, memo: `[매도] ${stockName} ${qty}주` });
           alert(`📈 ${stockName} ${qty}주를 판매해 ${total}P 획득!`);
         }
@@ -2183,7 +2233,6 @@
 
             if (current && current.quantity > 0) {
               const newQty = current.quantity - 1;
-              // 🌟 [추가 보완] 수량이 0개가 되면 DB 테이블에서 행 삭제
               if (newQty === 0) {
                 await sb.from("student_coupons").delete().eq("id", scId);
               } else {
