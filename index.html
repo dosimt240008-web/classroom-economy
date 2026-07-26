@@ -1300,7 +1300,7 @@ async function updateStockPrice() {
     }
 
 // =========================================================
-    // ✨ [새로 추가] 교사 모드: 가상 주식 신규 종목 추가 (상장) 로직
+    // ✨ 교사 모드: 가상 주식 신규 종목 추가 (시간 기록 버그 픽스)
     // =========================================================
     async function createNewStock() {
       const name = document.getElementById("tNewStockName").value.trim();
@@ -1309,28 +1309,22 @@ async function updateStockPrice() {
       const initPriceStr = document.getElementById("tNewStockInitPrice").value;
       const desc = document.getElementById("tNewStockDesc").value.trim();
 
-      // 🛡️ 1. 유효성 및 NaN 검사 (예외 처리)
       if (!name) return alert("❌ 주식 종목 이름을 입력해 주세요.");
-      
       if (initPriceStr === "" || isNaN(parseInt(initPriceStr)) || parseInt(initPriceStr) <= 0) {
         return alert("❌ 초기 상장 주가를 올바르게 숫자로 입력해 주세요 (1P 이상).");
       }
       
       const divider = (dividerStr === "" || isNaN(parseInt(dividerStr))) ? 1 : Math.max(1, parseInt(dividerStr, 10));
       const initPrice = parseInt(initPriceStr, 10);
-
-      // 중복 클릭 방지를 위해 버튼 일시 잠금
       const btn = window.event ? window.event.currentTarget : null;
       if (btn) btn.disabled = true;
 
       try {
-        // ✨ [번호 꼬임 해결!] 기존 주식들 중 가장 높은 id 번호를 찾아서 +1을 해줍니다.
         const { data: maxStock } = await sb.from("stocks").select("id").order("id", { ascending: false }).limit(1).maybeSingle();
         const nextId = maxStock ? maxStock.id + 1 : 1;
 
-        // 2. Supabase 'stocks' 테이블에 새 종목 insert (직접 구한 nextId 사용)
         const { data: newStock, error: stockErr } = await sb.from("stocks").insert({
-          id: nextId, // 👈 중복 에러를 피하기 위해 계산된 다음 번호를 직접 넣습니다.
+          id: nextId, 
           symbol: ticker ? ticker : name,
           name: name,
           ticker: ticker || null,
@@ -1341,33 +1335,28 @@ async function updateStockPrice() {
 
         if (stockErr) throw stockErr;
 
-        // 3. 차트 버그 방지용 핵심 안전 로직: 생성된 stock_id를 가지고 최초 가격(stock_prices)을 1줄 즉시 생성
         if (newStock) {
-          const { error: priceErr } = await sb.from("stock_prices").insert({
+          await sb.from("stock_prices").insert({
             stock_id: newStock.id,
             price: initPrice,
-            note: "🚀 최초 신규 상장 (교사 등록)"
+            note: "🚀 최초 신규 상장 (교사 등록)",
+            effective_at: new Date().toISOString() // ✨ [핵심 수정] 상장 시점의 시간도 DB에 완벽히 기록!
           });
-          if (priceErr) throw priceErr;
         }
 
-        alert(`🎉 [${name}] 종목이 주식 시장에 정상적으로 등록 및 상장되었습니다!`);
-
-        // 입력 폼 깔끔하게 비우기
+        alert(`🎉 [${name}] 종목이 정상 상장되었습니다!`);
         document.getElementById("tNewStockName").value = "";
         document.getElementById("tNewStockTicker").value = "";
         document.getElementById("tNewStockDivider").value = "1";
         document.getElementById("tNewStockInitPrice").value = "10";
         document.getElementById("tNewStockDesc").value = "";
 
-        // 4. 교사 화면 드롭다운 변동 현황판 및 주식 대시보드 화면 일괄 새로고침
         if (typeof loadDropdownsForStockManager === "function") await loadDropdownsForStockManager();
         if (typeof refreshStockMarket === "function") await refreshStockMarket();
         if (typeof drawStockChart === "function") drawStockChart();
 
       } catch (err) {
-        console.error("주식 등록 에러:", err);
-        alert("⚠️ 주식 종목을 추가하는 중 오류가 발생했습니다:\n" + err.message);
+        alert("⚠️ 주식 추가 오류:\n" + err.message);
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -1410,7 +1399,7 @@ async function updateStockPrice() {
       }
     }
 // =========================================================
-    // 📈 주식 차트 그리기 (완벽 복구 및 에러 방지 버전)
+    // 📈 주식 차트 그리기 (완벽 복구: 최신 데이터 짤림 및 겹침 버그 픽스)
     // =========================================================
     async function drawStockChart() {
       if (!sb) return;
@@ -1426,35 +1415,68 @@ async function updateStockPrice() {
           dateKeys.push(`${y}-${m}-${day}`); 
         }
         
+        // 1. 활성화된 주식 목록 가져오기
         const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true);
-        const { data: prices } = await sb.from("stock_prices").select("*").order("effective_at", { ascending: true });
-        if (!stocks || !prices) return;
+        
+        // ✨ [핵심 원인 1 해결] 과거 데이터가 많을 때 최신 가격이 잘리는 현상 방지
+        // 최신순으로 1000개를 먼저 가져온 뒤(내림차순), 시간 흐름에 맞게 다시 뒤집습니다(reverse).
+        const { data: rawPrices } = await sb.from("stock_prices")
+          .select("*")
+          .order("effective_at", { ascending: false })
+          .limit(1000);
+          
+        if (!stocks || !rawPrices) return;
+
+        // 최신 데이터들을 다시 과거->현재 순서로 정렬
+        const prices = rawPrices.reverse(); 
 
         const dailyPrices = {};
         prices.forEach(p => {
+          if (!p.effective_at) return;
+          
           const pDate = new Date(p.effective_at);
           const pKey = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}-${String(pDate.getDate()).padStart(2, '0')}`;
+          
           if (!dailyPrices[pKey]) dailyPrices[pKey] = {};
-          dailyPrices[pKey][p.stock_id] = p.price; 
+          // ✨ [핵심 원인 2 해결] DB의 bigint 타입 충돌로 데이터가 덮어써지는 버그 방지 (강제 문자열 변환)
+          dailyPrices[pKey][String(p.stock_id)] = p.price; 
         });
 
         const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
         const datasets = stocks.map((stock, index) => {
           let currentPrice = null;
           const startDate = new Date(dateKeys[0] + "T00:00:00");
-          prices.filter(p => p.stock_id === stock.id).forEach(p => { if (new Date(p.effective_at) < startDate) currentPrice = p.price; });
+          const stockIdStr = String(stock.id);
+          
+          const stockHistory = prices.filter(p => String(p.stock_id) === stockIdStr && p.effective_at);
+          
+          stockHistory.forEach(p => { 
+            if (new Date(p.effective_at) < startDate) currentPrice = p.price; 
+          });
+
+          // 오늘 상장해서 과거 데이터가 없다면 첫 가격을 시작점으로
+          if (currentPrice === null && stockHistory.length > 0) {
+            currentPrice = stockHistory[0].price;
+          }
           
           const data = dateKeys.map(dk => { 
-            if (dailyPrices[dk] && dailyPrices[dk][stock.id] !== undefined) {
-              currentPrice = dailyPrices[dk][stock.id]; 
+            if (dailyPrices[dk] && dailyPrices[dk][stockIdStr] !== undefined) {
+              currentPrice = dailyPrices[dk][stockIdStr]; 
             }
             return currentPrice; 
           });
           
-          return { label: stock.name, data: data, borderColor: colors[index % colors.length], backgroundColor: colors[index % colors.length], tension: 0.1, borderWidth: 2, pointRadius: 4 };
+          return { 
+            label: stock.name, 
+            data: data, 
+            borderColor: colors[index % colors.length], 
+            backgroundColor: colors[index % colors.length], 
+            tension: 0.1, 
+            borderWidth: 2, 
+            pointRadius: 4 
+          };
         });
 
-        // ✨ [핵심 수정] 선언되지 않은 변수로 인한 ReferenceError 방지!
         if (window.myStockChart) {
           window.myStockChart.destroy();
         }
@@ -1462,11 +1484,16 @@ async function updateStockPrice() {
         window.myStockChart = new Chart(canvas, { 
           type: 'line', 
           data: { labels, datasets }, 
-          options: { responsive: true, maintainAspectRatio: false } 
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: false } // 📈 주가 변동폭이 더 다이내믹하게 보이도록 Y축 0점 제한 해제
+            }
+          } 
         });
 
       } catch (error) {
-        // 에러가 나면 조용히 넘어가지 않고 개발자 도구(F12)에 빨간색으로 찍어줍니다.
         console.error("📊 차트 그리기 에러:", error);
       }
     }
@@ -1662,11 +1689,12 @@ function showAllStocks() {
       }
     }
 
-// [완전체 버전] 강력한 프록시 + 로딩 버튼 UX + 성공/실패 결과 리포트
+// =========================================================
+  // 🌐 실제 외부 주식 시장 자동 동기화 (시간 기록 버그 픽스)
+  // =========================================================
   async function syncRealStockPrices() {
     if (!confirm("실제 주식 시장의 최신 가격을 불러와 동기화하시겠습니까?\n(성공/실패 여부가 마지막에 리포트로 출력됩니다.)")) return;
 
-    // 1. 버튼 UX: 로딩 중 표시 및 중복 클릭 방지
     const syncBtn = window.event ? window.event.currentTarget : null;
     let originalText = "";
     if (syncBtn) {
@@ -1681,10 +1709,7 @@ function showAllStocks() {
     try {
       const { data: stockList, error } = await sb.from('stocks').select('*');
       if (error) throw error;
-      if (!stockList || stockList.length === 0) {
-        alert("⚠️ 등록된 주식 종목이 없습니다.");
-        return;
-      }
+      if (!stockList || stockList.length === 0) return alert("⚠️ 등록된 주식 종목이 없습니다.");
 
       for (let s of stockList) {
         if (!s.ticker || s.ticker.trim() === '') {
@@ -1694,8 +1719,6 @@ function showAllStocks() {
 
         try {
           const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${s.ticker.trim()}`;
-          
-          // 🌟 튼튼한 예전 코드의 프록시 목록 부활!
           const proxies = [
             `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
             `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
@@ -1703,18 +1726,11 @@ function showAllStocks() {
           ];
 
           let yahooData = null;
-
-          // 3개 서버 교대 타격
           for (let proxy of proxies) {
             try {
               const response = await fetch(proxy);
-              if (response.ok) {
-                yahooData = await response.json();
-                break;
-              }
-            } catch (e) {
-              console.warn(`[${s.name}] 프록시 접속 지연, 다음 서버로 재시도...`);
-            }
+              if (response.ok) { yahooData = await response.json(); break; }
+            } catch (e) { console.warn(`[${s.name}] 지연...`); }
           }
 
           if (!yahooData || !yahooData.chart || !yahooData.chart.result) {
@@ -1722,51 +1738,33 @@ function showAllStocks() {
             continue; 
           }
 
-          const realPriceInfo = yahooData.chart.result[0].meta;
-          const realMarketPrice = realPriceInfo.regularMarketPrice; 
-
+          const realMarketPrice = yahooData.chart.result[0].meta.regularMarketPrice; 
           const divideRatio = Number(s.divider) || 1;
           const currentPrice = Math.max(1, Math.round(realMarketPrice / divideRatio)); 
-
-          // 🌟 예전 코드의 스마트한 DB 저장 로직 + 리포트 기록
           const oldPrice = latestPriceMap.get(s.id) || 0;
           
           if (currentPrice > 0 && currentPrice !== oldPrice) {
             await sb.from('stock_prices').insert([{ 
               stock_id: s.id, 
               price: currentPrice,
-              note: `실제 연동 (1/${divideRatio} 적용)`
+              note: `실제 연동 (1/${divideRatio} 적용)`,
+              effective_at: new Date().toISOString() // ✨ [핵심 수정] 동기화 시점의 시간 추가!
             }]);
             successList.push(`• ${s.name} ➡️ ${currentPrice} P (변경됨)`);
           } else {
-            // 가격이 같아서 DB를 아낀 경우에도 성공 리포트에는 표시
             successList.push(`• ${s.name} ➡️ ${currentPrice} P (유지됨)`);
           }
-
         } catch (fetchErr) {
-          failList.push(`• ${s.name} (이유: 데이터 처리 중 알 수 없는 오류 ❌)`);
-          console.error(`[${s.ticker}] 오류:`, fetchErr);
+          failList.push(`• ${s.name} (에러발생)`);
         }
       }
 
-      // 📊 결과 리포트 출력
       let reportMsg = "📊 [실시간 주가 동기화 결과 리포트]\n\n";
-      
-      if (successList.length > 0) {
-        reportMsg += "✅ 성공 종목:\n" + successList.join("\n") + "\n\n";
-      } else {
-        reportMsg += "✅ 성공 종목: 없음\n\n";
-      }
-      
-      if (failList.length > 0) {
-        reportMsg += "⚠️ 실패 종목:\n" + failList.join("\n");
-      } else {
-        reportMsg += "🎉 축하합니다! 모든 종목이 완벽하게 동기화되었습니다.";
-      }
+      reportMsg += successList.length > 0 ? "✅ 성공 종목:\n" + successList.join("\n") + "\n\n" : "✅ 성공 종목: 없음\n\n";
+      reportMsg += failList.length > 0 ? "⚠️ 실패 종목:\n" + failList.join("\n") : "🎉 축하합니다! 모든 종목이 동기화되었습니다.";
       
       alert(reportMsg);
 
-      // 🔄 모든 차트와 현황판 새로고침
       await refreshStockMarket(); 
       if (typeof drawStockChart === "function") drawStockChart();
       if (typeof loadDropdownsForStockManager === "function") loadDropdownsForStockManager();
@@ -1774,14 +1772,9 @@ function showAllStocks() {
     } catch (err) {
       alert("주가 동기화 중 오류가 발생했습니다: " + err.message);
     } finally {
-      // 2. 버튼 UX 복구: 오류가 나든 성공하든 버튼을 원래 상태로 되돌림
-      if (syncBtn) {
-        syncBtn.innerHTML = originalText;
-        syncBtn.disabled = false;
-      }
+      if (syncBtn) { syncBtn.innerHTML = originalText; syncBtn.disabled = false; }
     }
   }
-
     // =========================================================
     // 🎟️ 교사 모드: 쿠폰 관리 세팅
     // =========================================================
