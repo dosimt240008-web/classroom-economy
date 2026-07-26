@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ko">
 <head>
@@ -140,9 +141,15 @@
       </div>
 
       <div id="stu-stock" class="tabpanel">
-        <div style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border);">
-          <h2 style="margin: 0; color: var(--text);">📈 곰코노미 증권거래소</h2>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: var(--muted);">현재 시세를 분석하고 현명하게 투자해보세요.</p>
+        <div style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="margin: 0; color: var(--text);">📈 곰코노미 증권거래소</h2>
+            <p style="margin: 4px 0 0 0; font-size: 14px; color: var(--muted);">현재 시세를 분석하고 현명하게 투자해보세요.</p>
+          </div>
+          <!-- 🌟 [추가 보완] 학생용 거래장 실시간 상태 배너 -->
+          <div style="background: var(--soft); border: 1px solid #bfdbfe; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+            📢 <span id="marketStateStudent" style="font-weight: bold; color: var(--accent);">거래 상태 조회 중...</span>
+          </div>
         </div>
 
         <div class="grid">
@@ -436,16 +443,16 @@
     let isRefreshingStudent = false;
     let interestTimerInterval = null;
 
- const tabChannel = new BroadcastChannel('gomconomy_tab_check');
-  tabChannel.postMessage('check_duplicate');
+    const tabChannel = new BroadcastChannel('gomconomy_tab_check');
+    tabChannel.postMessage('check_duplicate');
 
-  tabChannel.onmessage = (e) => {
-    if (e.data === 'check_duplicate') {
-      tabChannel.postMessage('tab_already_open');
-    } else if (e.data === 'tab_already_open') {
-      alert("⚠️ 곰코노미가 이미 다른 브라우저 탭에서 열려 있습니다!\n\n데이터 오작동을 방지하기 위해 이 탭을 닫고 기존 탭을 이용해 주세요.");
-    }
-  };
+    tabChannel.onmessage = (e) => {
+      if (e.data === 'check_duplicate') {
+        tabChannel.postMessage('tab_already_open');
+      } else if (e.data === 'tab_already_open') {
+        alert("⚠️ 곰코노미가 이미 다른 브라우저 탭에서 열려 있습니다!\n\n데이터 오작동을 방지하기 위해 이 탭을 닫고 기존 탭을 이용해 주세요.");
+      }
+    };
 
     // =========================================================
     // 🔔 화면 전환 및 탭 관리
@@ -534,29 +541,26 @@
         const { data: bankData } = await sb.from("bank_accounts").select("deposit_balance").eq("student_id", me.id).maybeSingle();
         let currentDeposit = bankData ? bankData.deposit_balance : 0;
 
- // ✅ 지운 자리에 이 코드를 붙여넣어 주세요!
-let weeklyDepositRate = 20; // 기본값 20%
-try {
-  const { data: configData } = await sb.from("bank_config").select("deposit_rate").eq("id", 1).maybeSingle();
-  if (configData && configData.deposit_rate !== undefined) weeklyDepositRate = configData.deposit_rate;
-} catch (e) {
-  console.error("예금 이자율 조회 실패, 기본값(20%) 적용");
-}
+        let weeklyDepositRate = 20; 
+        try {
+          const { data: configData } = await sb.from("bank_config").select("deposit_rate").eq("id", 1).maybeSingle();
+          if (configData && configData.deposit_rate !== undefined) weeklyDepositRate = configData.deposit_rate;
+        } catch (e) {
+          console.error("예금 이자율 조회 실패, 기본값(20%) 적용");
+        }
 
-// 🌟 DB 함수를 통해 7일 이자 자동 정산 (중복 수령/시간 조작 원천 차단)
-const { data: interestEarned } = await sb.rpc('claim_weekly_interest', {
-  p_student_id: me.id,
-  p_deposit_rate: weeklyDepositRate
-});
+        const { data: interestEarned } = await sb.rpc('claim_weekly_interest', {
+          p_student_id: me.id,
+          p_deposit_rate: weeklyDepositRate
+        });
 
-if (interestEarned && interestEarned > 0) {
-  // 💡 [추가된 부분] DB에서 늘어난 이자만큼 자바스크립트 화면 변수에도 바로 더해줍니다!
-  currentDeposit += interestEarned; 
-  me.last_interest_date = new Date().toISOString(); // 이자 지급 시 타이머도 즉시 최신화
+        if (interestEarned && interestEarned > 0) {
+          currentDeposit += interestEarned; 
+          me.last_interest_date = new Date().toISOString(); 
 
-  await sb.from("ledger").insert({ student_id: me.id, type: "interest_earn", amount: interestEarned, memo: `[은행 복리 이자 정기 보상]` });
-  alert(`🎉 훌륭합니다! 정기 복리 이자 ${interestEarned}P가 통장에 입금되었습니다! 💰`);
-}
+          await sb.from("ledger").insert({ student_id: me.id, type: "interest_earn", amount: interestEarned, memo: `[은행 복리 이자 정기 보상]` });
+          alert(`🎉 훌륭합니다! 정기 복리 이자 ${interestEarned}P가 통장에 입금되었습니다! 💰`);
+        }
 
         startInterestTimer(); 
 
@@ -730,40 +734,38 @@ if (interestEarned && interestEarned > 0) {
     // =========================================================
     // 🏦 은행 처리
     // =========================================================
- async function handleBankTransaction(actionType) {
-  if (!me) return alert("로그인 필요!");
-  const amount = parseInt(document.getElementById('bankAmount').value, 10);
-  if (!amount || amount <= 0) return alert("올바른 금액 입력");
-  
-  const btn = window.event ? window.event.currentTarget : null;
-  if (btn) btn.disabled = true;
+    async function handleBankTransaction(actionType) {
+      if (!me) return alert("로그인 필요!");
+      const amount = parseInt(document.getElementById('bankAmount').value, 10);
+      if (!amount || amount <= 0) return alert("올바른 금액 입력");
+      
+      const btn = window.event ? window.event.currentTarget : null;
+      if (btn) btn.disabled = true;
 
-  try {
-    // 🌟 DB의 원자적 입출금 로봇(RPC) 호출
-    const { data: isSuccess, error } = await sb.rpc('process_bank_transaction', {
-      p_student_id: me.id,
-      p_amount: amount,
-      p_type: actionType
-    });
+      try {
+        const { data: isSuccess, error } = await sb.rpc('process_bank_transaction', {
+          p_student_id: me.id,
+          p_amount: amount,
+          p_type: actionType
+        });
 
-    if (error || !isSuccess) {
-      return alert(actionType === 'deposit' ? "지갑 포인트가 부족합니다!" : "통장 예금 잔액이 부족합니다!");
+        if (error || !isSuccess) {
+          return alert(actionType === 'deposit' ? "지갑 포인트가 부족합니다!" : "통장 예금 잔액이 부족합니다!");
+        }
+
+        const ledgerType = actionType === 'deposit' ? 'deposit' : 'withdraw';
+        const amt = actionType === 'deposit' ? -amount : amount;
+        await sb.from('ledger').insert([{ student_id: me.id, type: ledgerType, amount: amt, memo: actionType === 'deposit' ? '은행 예금' : '은행 출금' }]);
+
+        document.getElementById('bankAmount').value = '';
+        await refreshStudent();
+        alert(`🎉 ${amount}P ${actionType === 'deposit' ? '예금' : '출금'} 완료! (이자 타이머가 7일로 초기화되었습니다)`);
+      } catch (err) {
+        alert("거래 중 오류 발생: " + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
-
-    // 용돈기입장(ledger) 기록
-    const ledgerType = actionType === 'deposit' ? 'deposit' : 'withdraw';
-    const amt = actionType === 'deposit' ? -amount : amount;
-    await sb.from('ledger').insert([{ student_id: me.id, type: ledgerType, amount: amt, memo: actionType === 'deposit' ? '은행 예금' : '은행 출금' }]);
-
-    document.getElementById('bankAmount').value = '';
-    await refreshStudent();
-    alert(`🎉 ${amount}P ${actionType === 'deposit' ? '예금' : '출금'} 완료! (이자 타이머가 7일로 초기화되었습니다)`);
-  } catch (err) {
-    alert("거래 중 오류 발생: " + err.message);
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
 
     async function loadTeacherBankStudentDropdown() {
       if (!sb) return;
@@ -1557,6 +1559,8 @@ if (interestEarned && interestEarned > 0) {
           const newShares = currentShares - qty;
           
           const { data: dbUser } = await sb.from("students").select("balance").eq("id", me.id).single();
+          if (!dbUser) return alert("잔액 정보를 불러올 수 없습니다.");
+
           await sb.from("students").update({ balance: dbUser.balance + total }).eq("id", me.id);
 
           if (newShares === 0) {
@@ -1663,25 +1667,25 @@ if (interestEarned && interestEarned > 0) {
       }
     }
 
-async function updateStockDivider() {
-  if (!sb) return;
-  const stockId = prompt("비율(Divider)을 변경할 주식의 종목 ID 번호를 입력하세요:");
-  if (!stockId) return;
-  
-  const dividerStr = prompt("새로운 주가 비율 Divider 숫자를 입력하세요 (기본값: 1):", "1");
-  if (!dividerStr || isNaN(parseInt(dividerStr, 10)) || parseInt(dividerStr, 10) < 1) {
-    return alert("올바른 1 이상의 숫자를 입력해 주세요.");
-  }
-  
-  try {
-    const { error } = await sb.from("stocks").update({ divider: parseInt(dividerStr, 10) }).eq("id", stockId);
-    if (error) throw error;
-    alert("✅ 종목별 비율(Divider)이 성공적으로 변경되었습니다!");
-    if (typeof loadDropdownsForStockManager === "function") await loadDropdownsForStockManager();
-  } catch (err) {
-    alert("비율 변경 중 오류 발생: " + err.message);
-  }
-}
+    async function updateStockDivider() {
+      if (!sb) return;
+      const stockId = prompt("비율(Divider)을 변경할 주식의 종목 ID 번호를 입력하세요:");
+      if (!stockId) return;
+      
+      const dividerStr = prompt("새로운 주가 비율 Divider 숫자를 입력하세요 (기본값: 1):", "1");
+      if (!dividerStr || isNaN(parseInt(dividerStr, 10)) || parseInt(dividerStr, 10) < 1) {
+        return alert("올바른 1 이상의 숫자를 입력해 주세요.");
+      }
+      
+      try {
+        const { error } = await sb.from("stocks").update({ divider: parseInt(dividerStr, 10) }).eq("id", stockId);
+        if (error) throw error;
+        alert("✅ 종목별 비율(Divider)이 성공적으로 변경되었습니다!");
+        if (typeof loadDropdownsForStockManager === "function") await loadDropdownsForStockManager();
+      } catch (err) {
+        alert("비율 변경 중 오류 발생: " + err.message);
+      }
+    }
 
     // =========================================================
     // 🎟️ 쿠폰 관리 (교사/학생)
@@ -2179,7 +2183,12 @@ async function updateStockDivider() {
 
             if (current && current.quantity > 0) {
               const newQty = current.quantity - 1;
-              await sb.from("student_coupons").update({ quantity: newQty }).eq("id", scId);
+              // 🌟 [추가 보완] 수량이 0개가 되면 DB 테이블에서 행 삭제
+              if (newQty === 0) {
+                await sb.from("student_coupons").delete().eq("id", scId);
+              } else {
+                await sb.from("student_coupons").update({ quantity: newQty }).eq("id", scId);
+              }
               alert("쿠폰 1장 사용(회수) 처리가 완료되었습니다.");
             } else {
               alert("회수할 쿠폰 수량이 부족합니다.");
@@ -2354,7 +2363,6 @@ async function updateStockDivider() {
         loadJobAssignList();
       }
     }
-
 
     document.getElementById('openPrivacy').addEventListener('click', function(e) {
       e.preventDefault();
