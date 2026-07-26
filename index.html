@@ -550,6 +550,10 @@ const { data: interestEarned } = await sb.rpc('claim_weekly_interest', {
 });
 
 if (interestEarned && interestEarned > 0) {
+  // 💡 [추가된 부분] DB에서 늘어난 이자만큼 자바스크립트 화면 변수에도 바로 더해줍니다!
+  currentDeposit += interestEarned; 
+  me.last_interest_date = new Date().toISOString(); // 이자 지급 시 타이머도 즉시 최신화
+
   await sb.from("ledger").insert({ student_id: me.id, type: "interest_earn", amount: interestEarned, memo: `[은행 복리 이자 정기 보상]` });
   alert(`🎉 훌륭합니다! 정기 복리 이자 ${interestEarned}P가 통장에 입금되었습니다! 💰`);
 }
