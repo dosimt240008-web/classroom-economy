@@ -53,13 +53,13 @@
         <div class="nav-item" onclick="switchView('stu-ledger')">🧾 용돈 기입장</div>
         <div class="nav-item" onclick="logout()" style="color:var(--danger); margin-top:24px;">🚪 로그아웃</div>
       </div>
-<div style="margin-top: 30px; text-align: center;">
+      <div style="margin-top: 30px; text-align: center;">
         <a href="#" id="openPrivacy" style="font-size:13px; color:#2563eb; text-decoration:underline;">
           개인정보 처리 안내
         </a>
       </div>
       <div id="nav-teacher" style="display:none;">
-<div class="nav-item" onclick="changeTeacherPin()" style="color:var(--accent);">🔐 교사 비밀번호 변경</div>
+        <div class="nav-item" onclick="changeTeacherPin()" style="color:var(--accent);">🔐 교사 비밀번호 변경</div>
         <div class="nav-item" onclick="switchView('tea-dashboard')">📊 학생 관리</div>
         <div class="nav-item" onclick="switchView('tea-job')">💼 직업 관리</div>
         <div class="nav-item" onclick="switchView('tea-treasury')">🏛️ 공동 기금</div>
@@ -76,7 +76,7 @@
           <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
             <input type="number" id="loginNo" placeholder="출석번호 (예: 5)" />
             <input type="password" id="loginPin" placeholder="비밀번호 PIN" />
-            <button onclick="login()">로그인하기</button>
+            <button onclick="handleLogin()">로그인하기</button>
             <div style="text-align:center; margin-top:12px;">
               <a href="#" onclick="enterTeacherMode()" style="font-size:0.85rem; color:var(--muted);">⚙️ 교사 권한으로 접속</a>
             </div>
@@ -139,7 +139,7 @@
         </div>
       </div>
 
-<div id="stu-stock" class="tabpanel">
+      <div id="stu-stock" class="tabpanel">
         <div style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border);">
           <h2 style="margin: 0; color: var(--text);">📈 곰코노미 증권거래소</h2>
           <p style="margin: 4px 0 0 0; font-size: 14px; color: var(--muted);">현재 시세를 분석하고 현명하게 투자해보세요.</p>
@@ -147,7 +147,6 @@
 
         <div class="grid">
           <div style="display: flex; flex-direction: column; gap: 20px;">
-            
             <div class="card" style="border: none; box-shadow: var(--shadow); padding: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h4 style="margin: 0; font-size: 16px;">📊 주간 시세 추이 (최근 7일)</h4>
@@ -158,13 +157,11 @@
 
             <div class="card" style="border: none; box-shadow: var(--shadow); padding: 20px;">
               <h4 style="margin: 0 0 16px 0; font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">🛒 주식 매수 / 매도</h4>
-              <div id="stockList">
-                </div>
+              <div id="stockList"></div>
             </div>
-
           </div>
           
-<div class="card" style="background: var(--soft); border: 1px solid #bfdbfe; box-shadow: var(--shadow); padding: 20px; align-self: start;">
+          <div class="card" style="background: var(--soft); border: 1px solid #bfdbfe; box-shadow: var(--shadow); padding: 20px; align-self: start;">
             <h3 style="margin: 0 0 16px 0; color: #1d4ed8; font-size: 18px; display: flex; align-items: center; gap: 6px;">
               💼 내 주식 지갑
             </h3>
@@ -175,10 +172,10 @@
                 보유 중인 주식이 없습니다.
               </div>
             </div>
-            
           </div>
         </div>
       </div>
+
       <div id="stu-coupon" class="tabpanel">
         <div class="grid">
           <div class="card" style="border: 2px solid #3b82f6; background-color: #eff6ff;">
@@ -203,7 +200,7 @@
       </div>
 
       <div id="tea-dashboard" class="tabpanel">
-<div class="card" style="border: 2px solid #10b981; margin-bottom: 20px;">
+        <div class="card" style="border: 2px solid #10b981; margin-bottom: 20px;">
           <h4 style="color: #047857; margin-top:0;">🏦 학급 은행 금리(예금/대출) 설정</h4>
           <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">
             설정한 이자율(%)은 학생들의 이자 계산 시 즉시 반영됩니다.
@@ -227,6 +224,7 @@
             </button>
           </div>
         </div>
+
         <div class="card">
           <h3>👥 전체 학생 자산부</h3>
           <div class="row">
@@ -240,14 +238,13 @@
         </div>
       </div>
 
-<div id="tea-job" class="tabpanel">
+      <div id="tea-job" class="tabpanel">
         <div class="card" style="border: 2px solid #2563eb; margin-bottom: 20px;">
           <h4 style="color: #1d4ed8; margin-top:0;">👥 학생별 직업 일괄 발령</h4>
           <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
             💡 출석부 목록에서 직업을 선택하면 버튼을 누를 필요 없이 <strong>즉시 자동 저장</strong>됩니다!
           </p>
-          <div id="job-assign-table-container" style="overflow-x: auto;">
-            </div>
+          <div id="job-assign-table-container" style="overflow-x: auto;"></div>
         </div>
         <div class="card">
           <h3>💼 학급 직업 관리</h3>
@@ -290,8 +287,7 @@
         </div>
       </div>
 
-<div id="tea-stock" class="tabpanel">
-        
+      <div id="tea-stock" class="tabpanel">
         <div class="card" style="border: 2px solid #3b82f6; margin-bottom: 20px;">
           <h3 style="color: #1d4ed8; margin-top:0;">⏰ 거래장 개장/마감 관리</h3>
           <div class="row">
@@ -310,7 +306,7 @@
           </div>
         </div>
         
-<div class="card" style="border: 2px solid #2563eb; margin-bottom: 20px;">
+        <div class="card" style="border: 2px solid #2563eb; margin-bottom: 20px;">
           <h4 style="color: #1d4ed8; margin-top:0;">✨ 새로운 주식 종목 등록하기 (상장)</h4>
           <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">
             새로운 주식을 등록하면 즉시 주식 시장 바둑판과 시세 그래프에 반영됩니다. (실제 주식 연동을 원치 않으면 야후 티커를 비워두세요)
@@ -373,7 +369,7 @@
             <button id="btnGiveCoupon" style="background-color: #0b7;">지급하기</button>
           </div>
         </div>
-<div class="card" style="border: 2px solid #3b82f6; margin-top: 15px;">
+        <div class="card" style="border: 2px solid #3b82f6; margin-top: 15px;">
           <h4 style="color: #2563eb; margin-top:0;">✨ 새로운 상점 쿠폰 만들기</h4>
           <div class="row" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="tNewCouponTitle" placeholder="쿠폰 이름 (예: 자리 바꾸기)" style="flex: 1; min-width: 150px; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" />
@@ -382,17 +378,16 @@
             <button onclick="createNewCoupon()" style="background-color: #3b82f6; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">등록하기</button>
           </div>
         </div>
-<!-- 교사 쿠폰 탭 하단에 추가할 전체 쿠폰 목록 영역 -->
-      <hr style="margin: 25px 0 15px 0; border: 0; border-top: 1px solid var(--border);" />
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="margin: 0;">🏷️ 등록된 상점 쿠폰 목록 및 가격 관리</h3>
-        <button onclick="loadAdminCoupons()" style="font-size: 12px; padding: 4px 8px;">🔄 새로고침</button>
-      </div>
-      <div id="adminCouponListContainer">
-        <p class="muted">쿠폰 목록을 불러오는 중...</p>
-      </div>
-      </div>
 
+        <hr style="margin: 25px 0 15px 0; border: 0; border-top: 1px solid var(--border);" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3 style="margin: 0;">🏷️ 등록된 상점 쿠폰 목록 및 가격 관리</h3>
+          <button onclick="loadAdminCoupons()" style="font-size: 12px; padding: 4px 8px;">🔄 새로고침</button>
+        </div>
+        <div id="adminCouponListContainer">
+          <p class="muted">쿠폰 목록을 불러오는 중...</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -409,6 +404,7 @@
       </div>
     </div>
   </dialog>
+
   <dialog id="jobModal" style="border:none; border-radius:12px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.15); width:350px;">
     <h3 style="margin-top:0;">💼 직업 등록</h3>
     <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
@@ -424,10 +420,10 @@
 
   <script>
     // =========================================================
-    // ⚙️ Supabase 설정 (🚨 선생님의 원래 키로 변경하세요!)
+    // ⚙️ Supabase 설정
     // =========================================================
-    const supabaseUrl = "https://kpnxlfzootonnhprbgte.supabase.co"; // 👈 주소 변경 필수!
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwbnhsZnpvb3Rvbm5ocHJiZ3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODI2MzgsImV4cCI6MjA4MzQ1ODYzOH0.Aq7zSATnXymwjJLdQ6wTZeHS5lR3_mN9crcMdncEwis";                    // 👈 키 변경 필수!
+    const supabaseUrl = "https://kpnxlfzootonnhprbgte.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwbnhsZnpvb3Rvbm5ocHJiZ3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODI2MzgsImV4cCI6MjA4MzQ1ODYzOH0.Aq7zSATnXymwjJLdQ6wTZeHS5lR3_mN9crcMdncEwis";
     const sb = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
     
     let me = null; let isTeacher = false; let realtimeSubscription = null;
@@ -437,12 +433,22 @@
     let latestPriceMap = new Map();
     let myHoldMap = new Map();
 
-    // 🌟 3번 해결용 락(Lock) 변수
     let isRefreshingStudent = false;
     let interestTimerInterval = null;
 
+ const tabChannel = new BroadcastChannel('gomconomy_tab_check');
+  tabChannel.postMessage('check_duplicate');
+
+  tabChannel.onmessage = (e) => {
+    if (e.data === 'check_duplicate') {
+      tabChannel.postMessage('tab_already_open');
+    } else if (e.data === 'tab_already_open') {
+      alert("⚠️ 곰코노미가 이미 다른 브라우저 탭에서 열려 있습니다!\n\n데이터 오작동을 방지하기 위해 이 탭을 닫고 기존 탭을 이용해 주세요.");
+    }
+  };
+
     // =========================================================
-    // 🔔 화면 전환 및 탭 버그 해결
+    // 🔔 화면 전환 및 탭 관리
     // =========================================================
     function switchView(viewId) {
       document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
@@ -475,13 +481,10 @@
       document.getElementById(tabId).classList.add('active');
     }
 
-window.onload = async () => {
-      // 1. 처음 사이트 켜질 때 주식 장 오픈/마감 상태를 서버에서 불러옵니다.
+    window.onload = async () => {
       if (typeof loadMarketState === "function") {
         await loadMarketState();
       }
-      
-      // 2. 기존에 있던 로그인 화면으로 전환하는 명령입니다.
       switchView('login');
     };
 
@@ -517,7 +520,7 @@ window.onload = async () => {
     }
 
     // =========================================================
-    // 👤 학생 데이터 통합 동기화
+    // 👤 학생 데이터 동기화 및 대시보드
     // =========================================================
     async function refreshStudent() {
       if (isRefreshingStudent) return;
@@ -531,55 +534,25 @@ window.onload = async () => {
         const { data: bankData } = await sb.from("bank_accounts").select("deposit_balance").eq("student_id", me.id).maybeSingle();
         let currentDeposit = bankData ? bankData.deposit_balance : 0;
 
-        if (!me.last_interest_date) {
-          const nowStr = new Date().toISOString();
-          await sb.from("students").update({ last_interest_date: nowStr }).eq("id", me.id);
-          me.last_interest_date = nowStr;
-        } else {
-          const lastDate = new Date(me.last_interest_date);
-          const now = new Date();
-          const diffTime = now - lastDate;
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+ // ✅ 지운 자리에 이 코드를 붙여넣어 주세요!
+let weeklyDepositRate = 20; // 기본값 20%
+try {
+  const { data: configData } = await sb.from("bank_config").select("deposit_rate").eq("id", 1).maybeSingle();
+  if (configData && configData.deposit_rate !== undefined) weeklyDepositRate = configData.deposit_rate;
+} catch (e) {
+  console.error("예금 이자율 조회 실패, 기본값(20%) 적용");
+}
 
-          // ----------------------------------------------------
-          // 💡 refreshStudent() 함수 내부의 예금 이자 계산 로직 수정
-          if (diffDays >= 7) { 
-            const weeksPassed = Math.floor(diffDays / 7); 
-            if (currentDeposit > 0) { 
-              
-              // ✅ 새롭게 교체할 코드: deposit_rate를 불러옵니다.
-              let weeklyDepositRate = 0.20; // 기본값 20%
-              try {
-                const { data: configData } = await sb.from("bank_config").select("deposit_rate").eq("id", 1).maybeSingle();
-                if (configData && configData.deposit_rate !== undefined) {
-                  weeklyDepositRate = configData.deposit_rate / 100; // 20 입력 시 0.20으로 변환
-                }
-              } catch (e) {
-                console.error("예금 이자율 조회 실패, 기본값(20%) 적용");
-              }
+// 🌟 DB 함수를 통해 7일 이자 자동 정산 (중복 수령/시간 조작 원천 차단)
+const { data: interestEarned } = await sb.rpc('claim_weekly_interest', {
+  p_student_id: me.id,
+  p_deposit_rate: weeklyDepositRate
+});
 
-              // 예금 이자 계산
-              const interest = Math.floor(currentDeposit * weeklyDepositRate * weeksPassed);
-              // 이후 if (interest > 0) { ... } 기존 코드 그대로 유지
-          // ----------------------------------------------------
-              if (interest > 0) {
-                currentDeposit += interest; 
-                const daysToAdd = weeksPassed * 7;
-                const newInterestDate = new Date(lastDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000)).toISOString();
-                
-                await sb.from("bank_accounts").update({ deposit_balance: currentDeposit, updated_at: new Date().toISOString() }).eq("student_id", me.id);
-                await sb.from("students").update({ last_interest_date: newInterestDate }).eq("id", me.id);
-                await sb.from("ledger").insert({ student_id: me.id, type: "interest_earn", amount: interest, memo: `[은행 이자] ${weeksPassed}주 정기 보상` });
-                
-                me.last_interest_date = newInterestDate;
-                alert(`🎉 훌륭합니다! ${weeksPassed}주치 은행 복리 이자 ${interest}P가 통장에 입금되었습니다! 💰`);
-              }
-            } else {
-              await sb.from("students").update({ last_interest_date: now.toISOString() }).eq("id", me.id);
-              me.last_interest_date = now.toISOString();
-            }
-          }
-        }
+if (interestEarned && interestEarned > 0) {
+  await sb.from("ledger").insert({ student_id: me.id, type: "interest_earn", amount: interestEarned, memo: `[은행 복리 이자 정기 보상]` });
+  alert(`🎉 훌륭합니다! 정기 복리 이자 ${interestEarned}P가 통장에 입금되었습니다! 💰`);
+}
 
         startInterestTimer(); 
 
@@ -601,17 +574,13 @@ window.onload = async () => {
         await loadMyLedger().catch(()=>{});
         await refreshStudentAssetAndHoldings(currentDeposit);
 
-if (typeof loadMyStocks === "function") await loadMyStocks();
-
-if (typeof drawStockChart === "function") {
-          drawStockChart();
-        }
+        if (typeof loadMyStocks === "function") await loadMyStocks();
+        if (typeof drawStockChart === "function") drawStockChart();
 
       } finally {
         isRefreshingStudent = false; 
       }
     }
- 
 
     async function refreshStudentAssetAndHoldings(bankDepositAmt) {
       if (!me) return;
@@ -670,7 +639,7 @@ if (typeof drawStockChart === "function") {
       ).subscribe();
     }
 
-    async function login() {
+    async function handleLogin() {
       if (!sb) return alert("Supabase 설정을 확인하세요!");
       const no = parseInt(document.getElementById("loginNo").value, 10);
       const pin = document.getElementById("loginPin").value;
@@ -685,7 +654,7 @@ if (typeof drawStockChart === "function") {
         switchView("stu-dashboard");
       } catch (err) { alert("로그인 에러: " + err.message); }
     }
-// [추가] 암호화된 교사 패스워드 입력 모달창을 구동하는 헬퍼 함수
+
     function askTeacherPin(title = "🔑 교사 인증", msg = "주위 학생들에게 보이지 않게 비밀번호를 입력하세요.") {
       return new Promise((resolve) => {
         const modal = document.getElementById("teacher-pin-modal");
@@ -695,14 +664,12 @@ if (typeof drawStockChart === "function") {
         const btnCancel = document.getElementById("teacher-pin-cancel");
         const btnConfirm = document.getElementById("teacher-pin-confirm");
 
-        // 초기 세팅
         titleEl.innerText = title;
         msgEl.innerText = msg;
         input.value = "";
         modal.style.display = "flex";
-        input.focus(); // 창이 뜨자마자 바로 타이핑 가능하도록 포커스
+        input.focus();
 
-        // 팝업 닫기 및 이벤트 정리
         function cleanup() {
           modal.style.display = "none";
           btnConfirm.onclick = null;
@@ -710,60 +677,31 @@ if (typeof drawStockChart === "function") {
           input.onkeydown = null;
         }
 
-        // 확인 버튼 클릭 시
-        btnConfirm.onclick = () => {
-          resolve(input.value);
-          cleanup();
-        };
-
-        // 취소 버튼 클릭 시
-        btnCancel.onclick = () => {
-          resolve(null);
-          cleanup();
-        };
-
-        // 엔터키 및 ESC키 예외 처리
+        btnConfirm.onclick = () => { resolve(input.value); cleanup(); };
+        btnCancel.onclick = () => { resolve(null); cleanup(); };
         input.onkeydown = (e) => {
-          if (e.key === "Enter") {
-            resolve(input.value);
-            cleanup();
-          } else if (e.key === "Escape") {
-            resolve(null);
-            cleanup();
-          }
+          if (e.key === "Enter") { resolve(input.value); cleanup(); }
+          else if (e.key === "Escape") { resolve(null); cleanup(); }
         };
       });
     }
-  // [보안 업그레이드] 마스킹 입력창을 통해 교사 모드로 진입
+
     async function enterTeacherMode() {
       try {
-        const { data, error } = await sb
-          .from('teacher_config')
-          .select('value')
-          .eq('key', 'teacher_pin')
-          .single();
-        
+        const { data, error } = await sb.from('teacher_config').select('value').eq('key', 'teacher_pin').single();
         if (error) throw error;
         
         const savedPin = data ? data.value : "1234";
-        
-        // 🚨 [변경] 기존 prompt를 지우고 안전한 마스킹 모달창 호출
         const pw = await askTeacherPin("🔑 교사 관리자 인증", "주위 학생들에게 보이지 않게 비밀번호를 입력하세요.");
-        
-        // 취소를 누른 경우 함수 종료 (음수/공백 예외 처리)
         if (pw === null) return; 
         
         if (pw === savedPin) {
-          isTeacher = true; 
-          me = null;
+          isTeacher = true; me = null;
           document.getElementById("nav-unauth").style.display = "none";
           document.getElementById("nav-student").style.display = "none";
           document.getElementById("nav-teacher").style.display = "block";
           
-          if (realtimeSubscription) { 
-            sb.removeChannel(realtimeSubscription); 
-            realtimeSubscription = null; 
-          }
+          if (realtimeSubscription) { sb.removeChannel(realtimeSubscription); realtimeSubscription = null; }
           
           switchView("tea-dashboard");
           loadTeaStudents(); 
@@ -786,37 +724,42 @@ if (typeof drawStockChart === "function") {
     function logout() { location.reload(); }
 
     // =========================================================
-    // 🏦 은행 예입 및 출금 (학생 / 교사)
+    // 🏦 은행 처리
     // =========================================================
-    async function handleBankTransaction(actionType) {
-      if (!me) return alert("로그인 필요!");
-      const amount = parseInt(document.getElementById('bankAmount').value, 10);
-      if (!amount || amount <= 0) return alert("올바른 금액 입력");
-      const btn = window.event.currentTarget; btn.disabled = true;
+ async function handleBankTransaction(actionType) {
+  if (!me) return alert("로그인 필요!");
+  const amount = parseInt(document.getElementById('bankAmount').value, 10);
+  if (!amount || amount <= 0) return alert("올바른 금액 입력");
+  
+  const btn = window.event ? window.event.currentTarget : null;
+  if (btn) btn.disabled = true;
 
-      try {
-        const { data: student } = await sb.from('students').select('balance').eq('id', me.id).single();
-        const { data: bank } = await sb.from('bank_accounts').select('deposit_balance').eq('student_id', me.id).maybeSingle();
-        let bal = student.balance, dep = bank ? bank.deposit_balance : 0;
-        let type = '', amt = 0;
+  try {
+    // 🌟 DB의 원자적 입출금 로봇(RPC) 호출
+    const { data: isSuccess, error } = await sb.rpc('process_bank_transaction', {
+      p_student_id: me.id,
+      p_amount: amount,
+      p_type: actionType
+    });
 
-        if (actionType === 'deposit') {
-          if (bal < amount) return alert("지갑 포인트 부족!"); 
-          bal -= amount; dep += amount; type = 'deposit'; amt = -amount;
-        } else {
-          if (dep < amount) return alert("통장 잔액 부족!");
-          bal += amount; dep -= amount; type = 'withdraw'; amt = amount;
-        }
-
-        await sb.from('bank_accounts').update({ deposit_balance: dep, updated_at: new Date().toISOString() }).eq('student_id', me.id);
-        await sb.from('students').update({ balance: bal, last_interest_date: new Date().toISOString() }).eq('id', me.id);
-        await sb.from('ledger').insert([{ student_id: me.id, type, amount: amt, memo: actionType==='deposit'?'은행 예금':'은행 출금' }]);
-        
-        document.getElementById('bankAmount').value = '';
-        await refreshStudent();
-        alert(`${amount}P 처리 완료! (이자 타이머가 7일로 초기화되었습니다)`);
-      } catch (err) { alert(err.message); } finally { btn.disabled = false; }
+    if (error || !isSuccess) {
+      return alert(actionType === 'deposit' ? "지갑 포인트가 부족합니다!" : "통장 예금 잔액이 부족합니다!");
     }
+
+    // 용돈기입장(ledger) 기록
+    const ledgerType = actionType === 'deposit' ? 'deposit' : 'withdraw';
+    const amt = actionType === 'deposit' ? -amount : amount;
+    await sb.from('ledger').insert([{ student_id: me.id, type: ledgerType, amount: amt, memo: actionType === 'deposit' ? '은행 예금' : '은행 출금' }]);
+
+    document.getElementById('bankAmount').value = '';
+    await refreshStudent();
+    alert(`🎉 ${amount}P ${actionType === 'deposit' ? '예금' : '출금'} 완료! (이자 타이머가 7일로 초기화되었습니다)`);
+  } catch (err) {
+    alert("거래 중 오류 발생: " + err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
 
     async function loadTeacherBankStudentDropdown() {
       if (!sb) return;
@@ -857,55 +800,46 @@ if (typeof drawStockChart === "function") {
       } catch (err) { alert(err.message); } finally { btn.disabled = false; }
     }
 
-// =========================================================
-// 🏦 학급 은행 예금/대출 금리 설정 로직
-// =========================================================
-async function loadBankRates() {
-  if (!sb) return;
-  try {
-    // bank_config 테이블에서 id가 1인 설정값을 가져옴 (예금, 대출 컬럼 모두)
-    const { data, error } = await sb.from("bank_config").select("deposit_rate, loan_rate").eq("id", 1).single();
-    if (error) throw error;
-
-    // 입력창에 값 세팅
-    if (data) {
-      if (data.deposit_rate !== undefined) document.getElementById("tDepositRate").value = data.deposit_rate;
-      if (data.loan_rate !== undefined) document.getElementById("tLoanRate").value = data.loan_rate;
+    async function loadBankRates() {
+      if (!sb) return;
+      try {
+        const { data, error } = await sb.from("bank_config").select("deposit_rate, loan_rate").eq("id", 1).single();
+        if (error) throw error;
+        if (data) {
+          if (data.deposit_rate !== undefined) document.getElementById("tDepositRate").value = data.deposit_rate;
+          if (data.loan_rate !== undefined) document.getElementById("tLoanRate").value = data.loan_rate;
+        }
+      } catch (err) {
+        console.error("은행 금리 불러오기 실패:", err);
+      }
     }
-  } catch (err) {
-    console.error("은행 금리 불러오기 실패:", err);
-  }
-}
 
-async function updateBankRates() {
-  const depositInput = document.getElementById("tDepositRate").value;
-  const loanInput = document.getElementById("tLoanRate").value;
+    async function updateBankRates() {
+      const depositInput = document.getElementById("tDepositRate").value;
+      const loanInput = document.getElementById("tLoanRate").value;
 
-  if (depositInput === "" || Number(depositInput) < 0 || loanInput === "" || Number(loanInput) < 0) {
-    return alert("올바른 예금 및 대출 이자율을 입력해 주세요.");
-  }
+      if (depositInput === "" || Number(depositInput) < 0 || loanInput === "" || Number(loanInput) < 0) {
+        return alert("올바른 예금 및 대출 이자율을 입력해 주세요.");
+      }
 
-  try {
-    // 🕒 현재 시간을 ISO 포맷(DB가 좋아하는 표준 시간 양식)으로 가져옵니다.
-    const nowTime = new Date().toISOString();
-
-    const { error } = await sb.from("bank_config").upsert({ 
-      id: 1, 
-      deposit_rate: Number(depositInput),
-      loan_rate: Number(loanInput),
-      updated_at: nowTime  // ✨ [추가] 금리가 변경될 때 현재 시간도 같이 덮어씌웁니다!
-    });
-    
-    if (error) throw error;
-    alert(`🏦 은행 금리가 성공적으로 변경되었습니다!\n\n✅ 예금 이자율: ${depositInput}%\n✅ 대출 이자율: ${loanInput}%`);
-    
-  } catch (err) {
-    alert("금리 변경 중 오류가 발생했습니다: " + err.message);
-  }
-}
+      try {
+        const nowTime = new Date().toISOString();
+        const { error } = await sb.from("bank_config").upsert({ 
+          id: 1, 
+          deposit_rate: Number(depositInput),
+          loan_rate: Number(loanInput),
+          updated_at: nowTime
+        });
+        
+        if (error) throw error;
+        alert(`🏦 은행 금리가 성공적으로 변경되었습니다!\n\n✅ 예금 이자율: ${depositInput}%\n✅ 대출 이자율: ${loanInput}%`);
+      } catch (err) {
+        alert("금리 변경 중 오류가 발생했습니다: " + err.message);
+      }
+    }
 
     // =========================================================
-    // 👨‍🏫 교사 모드: 학생, 직업, 주급 일괄 관리 로직 (완전 복구!)
+    // 👨‍🏫 교사 학생/직업 관리
     // =========================================================
     async function loadTeaStudents() {
       const { data, error } = await sb.from("students").select("*").order("student_no");
@@ -942,7 +876,6 @@ async function updateBankRates() {
       }
     }
 
-// [새로 추가된 함수] 학생 목록에서 통장 잔고(은행) 바로 조절
     async function adjustBankModal(id, name, currentDep) {
       const input = prompt(`[${name}] 학생의 '통장 잔고'를 조절합니다.\n(입금/보너스는 50, 강제출금/벌금은 -50 입력)`, "0");
       if (!input) return;
@@ -956,7 +889,7 @@ async function updateBankRates() {
         await sb.from("bank_accounts").update({ deposit_balance: nextDep, updated_at: new Date().toISOString() }).eq("student_id", id);
         await sb.from("ledger").insert({ student_id: id, type: "adjust", amount: 0, memo: `[교사 통장 수동 조절] ${amount > 0 ? '+' : ''}${amount}P` });
         alert(`✅ ${name} 학생의 통장 잔고 수정 완료!`);
-        loadTeaStudents(); // 테이블 새로고침
+        loadTeaStudents();
       } catch(e) { 
         alert("실패: " + e.message); 
       }
@@ -1097,69 +1030,68 @@ async function updateBankRates() {
       } catch (err) { alert(err.message); }
     }
 
-// =========================================================
-  // ⏰ 주식 거래장 개장/마감 상태 관리 (새로 추가된 부분)
-  // =========================================================
-  let marketOpen = false;
-  let marketMessage = "";
+    // =========================================================
+    // ⏰ 주식 거래장 개장/마감 관리
+    // =========================================================
+    let marketOpen = false;
+    let marketMessage = "";
 
-  async function loadMarketState() {
-    try {
-      const { data, error } = await sb.from("market_state").select("*").eq("id", 1).single();
-      if (error) throw error;
-      marketOpen = !!data.is_open;
-      marketMessage = data.message || "지금은 거래 시간이 아닙니다.";
-      renderMarketStateUI();
-      renderMarketBanner();
-    } catch (err) {
-      console.error("시장 상태 불러오기 실패:", err);
+    async function loadMarketState() {
+      try {
+        const { data, error } = await sb.from("market_state").select("*").eq("id", 1).single();
+        if (error) throw error;
+        marketOpen = !!data.is_open;
+        marketMessage = data.message || "지금은 거래 시간이 아닙니다.";
+        renderMarketStateUI();
+        renderMarketBanner();
+      } catch (err) {
+        console.error("시장 상태 불러오기 실패:", err);
+      }
     }
-  }
 
-  function renderMarketBanner(){
-    const banner = document.getElementById("marketBanner");
-    if (!banner) return;
-    banner.classList.remove("open","closed");
-    banner.classList.add(marketOpen ? "open" : "closed");
-    
-    const bannerText = document.getElementById("marketBannerText");
-    const bannerPill = document.getElementById("marketBannerPill");
-    if (bannerText) bannerText.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
-    if (bannerPill) bannerPill.textContent = marketOpen ? "OPEN" : "CLOSED";
-  }
-
-  function renderMarketStateUI() {
-    const st1 = document.getElementById("marketStateLabel");
-    const st2 = document.getElementById("marketStateStudent");
-    if (st1) st1.textContent = marketOpen ? "OPEN" : "CLOSED";
-    if (st2) st2.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
-
-    const buyBtn = document.getElementById("buyStock");
-    const sellBtn = document.getElementById("sellStock");
-    if (buyBtn) buyBtn.disabled = !marketOpen || !me;
-    if (sellBtn) sellBtn.disabled = !marketOpen || !me;
-  }
-
-  async function updateMarketState(isOpen) {
-    const msgInput = document.getElementById("marketMsg");
-    const msg = msgInput ? msgInput.value : "";
-
-    try {
-      const { error } = await sb.from("market_state").update({ is_open: isOpen, message: msg }).eq("id", 1);
-      if (error) throw error;
-      alert(isOpen ? "✅ 주식 거래장이 열렸습니다!" : "🛑 주식 거래장이 마감되었습니다!");
-      await loadMarketState();
-    } catch (err) {
-      alert("시장 상태 변경 중 오류가 발생했습니다: " + err.message);
+    function renderMarketBanner(){
+      const banner = document.getElementById("marketBanner");
+      if (!banner) return;
+      banner.classList.remove("open","closed");
+      banner.classList.add(marketOpen ? "open" : "closed");
+      
+      const bannerText = document.getElementById("marketBannerText");
+      const bannerPill = document.getElementById("marketBannerPill");
+      if (bannerText) bannerText.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
+      if (bannerPill) bannerPill.textContent = marketOpen ? "OPEN" : "CLOSED";
     }
-  }
 
-// =========================================================
-    // 👨‍🏫 교사 제어창 오픈 및 변경 시 주가 현황판 + 관리 표 그리기
+    function renderMarketStateUI() {
+      const st1 = document.getElementById("marketStateLabel");
+      const st2 = document.getElementById("marketStateStudent");
+      if (st1) st1.textContent = marketOpen ? "OPEN" : "CLOSED";
+      if (st2) st2.textContent = marketOpen ? (marketMessage || "거래 가능!") : (marketMessage || "지금은 거래 시간이 아닙니다.");
+
+      const buyBtn = document.getElementById("buyStock");
+      const sellBtn = document.getElementById("sellStock");
+      if (buyBtn) buyBtn.disabled = !marketOpen || !me;
+      if (sellBtn) sellBtn.disabled = !marketOpen || !me;
+    }
+
+    async function updateMarketState(isOpen) {
+      const msgInput = document.getElementById("marketMsg");
+      const msg = msgInput ? msgInput.value : "";
+
+      try {
+        const { error } = await sb.from("market_state").update({ is_open: isOpen, message: msg }).eq("id", 1);
+        if (error) throw error;
+        alert(isOpen ? "✅ 주식 거래장이 열렸습니다!" : "🛑 주식 거래장이 마감되었습니다!");
+        await loadMarketState();
+      } catch (err) {
+        alert("시장 상태 변경 중 오류가 발생했습니다: " + err.message);
+      }
+    }
+
+    // =========================================================
+    // 📈 주식 관리 및 거래
     // =========================================================
     async function loadDropdownsForStockManager() {
       if (!sb) return;
-      // 모든 활성화된(is_active = true) 주식 종목 가져오기
       const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true).order("id");
       const selPrice = document.getElementById("tPriceStockSelect");
       const selForceStock = document.getElementById("tManageStockList");
@@ -1173,7 +1105,6 @@ async function updateBankRates() {
         stocks?.forEach(st => selForceStock.innerHTML += `<option value="${st.id}">${st.name}</option>`);
       }
 
-      // 교사용 주가 실시간 현황판 배지 그리기
       const teaPriceBoard = document.getElementById("teaCurrentStockPrices");
       const tempPriceMap = new Map();
       
@@ -1201,7 +1132,6 @@ async function updateBankRates() {
         if (teaPriceBoard) teaPriceBoard.innerHTML = "";
       }
 
-      // ✨ [핵심 추가] 교사용 상장 주식 관리 표(Table) 렌더링 로직
       const adminStockContainer = document.getElementById("adminStockListContainer");
       if (adminStockContainer) {
         if (!stocks || stocks.length === 0) {
@@ -1280,7 +1210,7 @@ async function updateBankRates() {
       } catch(e) { alert(e.message); }
     }
 
-async function updateStockPrice() {
+    async function updateStockPrice() {
       const stockId = document.getElementById("tPriceStockSelect").value;
       const price = parseInt(document.getElementById("tNewPrice").value, 10);
       const note = document.getElementById("tPriceNote").value;
@@ -1290,18 +1220,12 @@ async function updateStockPrice() {
         alert("새 주가가 공시되었습니다.");
         document.getElementById("tNewPrice").value = ""; document.getElementById("tPriceNote").value = "";
         
-        // 화면 새로고침 목록들
         if (typeof drawStockChart === "function") drawStockChart();
         if (typeof refreshStockMarket === "function") refreshStockMarket();
-        
-        // ✨ [추가] 내가 방금 바꾼 주가가 교사용 현황판 배지에도 즉시 반영되도록 호출!
         if (typeof loadDropdownsForStockManager === "function") loadDropdownsForStockManager();
       } catch(e) { alert(e.message); }
     }
 
-// =========================================================
-    // ✨ 교사 모드: 가상 주식 신규 종목 추가 (시간 기록 버그 픽스)
-    // =========================================================
     async function createNewStock() {
       const name = document.getElementById("tNewStockName").value.trim();
       const ticker = document.getElementById("tNewStockTicker").value.trim();
@@ -1340,7 +1264,7 @@ async function updateStockPrice() {
             stock_id: newStock.id,
             price: initPrice,
             note: "🚀 최초 신규 상장 (교사 등록)",
-            effective_at: new Date().toISOString() // ✨ [핵심 수정] 상장 시점의 시간도 DB에 완벽히 기록!
+            effective_at: new Date().toISOString()
           });
         }
 
@@ -1361,9 +1285,7 @@ async function updateStockPrice() {
         if (btn) btn.disabled = false;
       }
     }
-// =========================================================
-    // ✨ [새로 추가] 교사 모드: 주식 상장 폐지 (삭제 및 안전 숨김) 로직
-    // =========================================================
+
     async function deleteStock(stockId, stockName) {
       if (!confirm(`⚠️ 정말로 [${stockName}] 종목을 상장 폐지(삭제)하시겠습니까?\n\n※ 만약 학생들이 이미 이 주식을 보유 중이거나 거래 기록이 있다면, 안전한 기록 보존을 위해 시장에서 '숨김(판매 중지)' 처리됩니다.`)) {
         return;
@@ -1373,11 +1295,9 @@ async function updateStockPrice() {
       if (btn) btn.disabled = true;
 
       try {
-        // 1단계: 기록이 없는 주식일 수 있으므로 완전 삭제(Delete)를 우선 시도합니다.
         const { error: deleteErr } = await sb.from("stocks").delete().eq("id", stockId);
         
         if (deleteErr) {
-          // 2단계: 만약 거래 이력/보유량이 묶여있어 외래키 에러가 발생하면 안전하게 '숨김(is_active=false)'으로 변경
           const { error: hideErr } = await sb.from("stocks").update({ is_active: false }).eq("id", stockId);
           if (hideErr) throw hideErr;
           
@@ -1386,7 +1306,6 @@ async function updateStockPrice() {
           alert(`🗑️ [${stockName}] 종목은 개설 후 거래된 내역이 없어 데이터베이스에서 깨끗하게 영구 삭제되었습니다.`);
         }
 
-        // 3단계: 삭제 완료 후 화면 UI, 현황판, 차트까지 완벽하게 일괄 새로고침
         await loadDropdownsForStockManager();
         if (typeof refreshStockMarket === "function") await refreshStockMarket();
         if (typeof drawStockChart === "function") drawStockChart();
@@ -1398,9 +1317,7 @@ async function updateStockPrice() {
         if (btn) btn.disabled = false;
       }
     }
-// =========================================================
-    // 📈 주식 차트 그리기 (완벽 복구: 최신 데이터 짤림 및 겹침 버그 픽스)
-    // =========================================================
+
     async function drawStockChart() {
       if (!sb) return;
       const canvas = document.getElementById("stockChart");
@@ -1415,11 +1332,7 @@ async function updateStockPrice() {
           dateKeys.push(`${y}-${m}-${day}`); 
         }
         
-        // 1. 활성화된 주식 목록 가져오기
         const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true);
-        
-        // ✨ [핵심 원인 1 해결] 과거 데이터가 많을 때 최신 가격이 잘리는 현상 방지
-        // 최신순으로 1000개를 먼저 가져온 뒤(내림차순), 시간 흐름에 맞게 다시 뒤집습니다(reverse).
         const { data: rawPrices } = await sb.from("stock_prices")
           .select("*")
           .order("effective_at", { ascending: false })
@@ -1427,18 +1340,15 @@ async function updateStockPrice() {
           
         if (!stocks || !rawPrices) return;
 
-        // 최신 데이터들을 다시 과거->현재 순서로 정렬
         const prices = rawPrices.reverse(); 
 
         const dailyPrices = {};
         prices.forEach(p => {
           if (!p.effective_at) return;
-          
           const pDate = new Date(p.effective_at);
           const pKey = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}-${String(pDate.getDate()).padStart(2, '0')}`;
           
           if (!dailyPrices[pKey]) dailyPrices[pKey] = {};
-          // ✨ [핵심 원인 2 해결] DB의 bigint 타입 충돌로 데이터가 덮어써지는 버그 방지 (강제 문자열 변환)
           dailyPrices[pKey][String(p.stock_id)] = p.price; 
         });
 
@@ -1454,7 +1364,6 @@ async function updateStockPrice() {
             if (new Date(p.effective_at) < startDate) currentPrice = p.price; 
           });
 
-          // 오늘 상장해서 과거 데이터가 없다면 첫 가격을 시작점으로
           if (currentPrice === null && stockHistory.length > 0) {
             currentPrice = stockHistory[0].price;
           }
@@ -1487,9 +1396,7 @@ async function updateStockPrice() {
           options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            scales: {
-              y: { beginAtZero: false } // 📈 주가 변동폭이 더 다이내믹하게 보이도록 Y축 0점 제한 해제
-            }
+            scales: { y: { beginAtZero: false } }
           } 
         });
 
@@ -1498,155 +1405,136 @@ async function updateStockPrice() {
       }
     }
 
-// =========================================================
-// 📈 주식 화면 그리기 (버튼 추가됨 ✨)
-// =========================================================
-async function refreshStockMarket() {
-  if (!sb) return;
+    async function refreshStockMarket() {
+      if (!sb) return;
 
-  // 1. 장 상태 확인
-  if (typeof loadMarketState === "function") {
-    await loadMarketState();
-  }
+      if (typeof loadMarketState === "function") {
+        await loadMarketState();
+      }
 
-  // 2. 주식 데이터 불러오기
-  const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true).order("id");
-  stockCache = stocks || [];
-  const listDiv = document.getElementById("stockList");
-  if (!listDiv) return;
+      const { data: stocks } = await sb.from("stocks").select("*").eq("is_active", true).order("id");
+      stockCache = stocks || [];
+      const listDiv = document.getElementById("stockList");
+      if (!listDiv) return;
 
-  const ids = stockCache.map(x => x.id);
-  latestPriceMap.clear();
-  if (ids.length > 0) {
-      const { data: prices } = await sb.from("stock_prices").select("stock_id, price").in("stock_id", ids).order("effective_at", { ascending: false });
-      if(prices) prices.forEach(p => { if (!latestPriceMap.has(p.stock_id)) latestPriceMap.set(p.stock_id, p.price); });
-  }
-  
-  myHoldMap.clear();
-  if(me) {
-      const { data: hData } = await sb.from("holdings").select("stock_id, shares, avg_cost").eq("student_id", me.id);
-      if(hData) hData.forEach(h => myHoldMap.set(h.stock_id, {shares: h.shares, avg_cost: h.avg_cost}));
-  }
+      const ids = stockCache.map(x => x.id);
+      latestPriceMap.clear();
+      if (ids.length > 0) {
+          const { data: prices } = await sb.from("stock_prices").select("stock_id, price").in("stock_id", ids).order("effective_at", { ascending: false });
+          if(prices) prices.forEach(p => { if (!latestPriceMap.has(p.stock_id)) latestPriceMap.set(p.stock_id, p.price); });
+      }
+      
+      myHoldMap.clear();
+      if(me) {
+          const { data: hData } = await sb.from("holdings").select("stock_id, shares, avg_cost").eq("student_id", me.id);
+          if(hData) hData.forEach(h => myHoldMap.set(h.stock_id, {shares: h.shares, avg_cost: h.avg_cost}));
+      }
 
-  // 3. 바둑판(Grid) 스타일 적용
-  listDiv.style.display = "grid";
-  listDiv.style.gridTemplateColumns = "repeat(auto-fill, minmax(260px, 1fr))";
-  listDiv.style.gap = "16px";
-  listDiv.innerHTML = "";
+      listDiv.style.display = "grid";
+      listDiv.style.gridTemplateColumns = "repeat(auto-fill, minmax(260px, 1fr))";
+      listDiv.style.gap = "16px";
+      listDiv.innerHTML = "";
 
-  // 4. 학생 화면에 버튼과 카드 그리기
-  for (const st of stockCache) {
-    const price = latestPriceMap.get(st.id) || 10; 
-    const myHold = myHoldMap.get(st.id);
-    const myShares = myHold ? myHold.shares : 0;
+      for (const st of stockCache) {
+        const price = latestPriceMap.get(st.id) || 10; 
+        const myHold = myHoldMap.get(st.id);
+        const myShares = myHold ? myHold.shares : 0;
 
-    const btnDisabled = !marketOpen ? "disabled" : "";
-    const buyColor = !marketOpen ? "#9ca3af" : "#0b7"; 
-    const sellColor = !marketOpen ? "#9ca3af" : "var(--danger)"; 
+        const btnDisabled = !marketOpen ? "disabled" : "";
+        const buyColor = !marketOpen ? "#9ca3af" : "#0b7"; 
+        const sellColor = !marketOpen ? "#9ca3af" : "var(--danger)"; 
 
-    listDiv.innerHTML += `
-      <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fafafa; display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <strong style="font-size: 1.1rem;">📈 ${st.name}</strong>
-            ${myShares > 0 ? `<span class="pill" style="background:#dcfce7; color:#166534; font-size:0.75rem;">🎒 ${myShares}주 보유</span>` : ""}
+        listDiv.innerHTML += `
+          <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fafafa; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <strong style="font-size: 1.1rem;">📈 ${st.name}</strong>
+                ${myShares > 0 ? `<span class="pill" style="background:#dcfce7; color:#166534; font-size:0.75rem;">🎒 ${myShares}주 보유</span>` : ""}
+              </div>
+              <div class="muted" style="font-size:0.85rem; margin: 6px 0 12px 0; min-height: 20px;">${st.description || ""}</div>
+            </div>
+            
+            <div>
+              <div style="font-size:1.3rem; font-weight:800; color:var(--accent); margin-bottom: 8px; text-align: right;">
+                ${price} P
+              </div>
+              
+              <div style="display:flex; gap:8px; margin-bottom: 12px;">
+                <button onclick="showOnlyOneStock('${st.name}')" style="flex:1; padding:6px; font-size:0.8rem; background:white; border:1px solid var(--border); border-radius:4px; cursor:pointer;">
+                  📈 이 차트만
+                </button>
+                <button onclick="showAllStocks()" style="flex:1; padding:6px; font-size:0.8rem; background:white; border:1px solid var(--border); border-radius:4px; cursor:pointer;">
+                  🌐 전체 보기
+                </button>
+              </div>
+              <div class="row" style="margin:0; gap:8px;">
+                <input type="number" id="tradeQty_${st.id}" placeholder="수량" style="width:70px; padding:8px;" min="1" value="1" ${btnDisabled} />
+                <button onclick="tradeStock(${st.id}, 'buy', ${price}, '${st.name}')" ${btnDisabled} style="background:${buyColor}; flex:1; padding:8px; color:white; border:none; border-radius:4px;">매수</button>
+                <button onclick="tradeStock(${st.id}, 'sell', ${price}, '${st.name}')" ${btnDisabled} style="background:${sellColor}; flex:1; padding:8px; color:white; border:none; border-radius:4px;">매도</button>
+              </div>
+            </div>
           </div>
-          <div class="muted" style="font-size:0.85rem; margin: 6px 0 12px 0; min-height: 20px;">${st.description || ""}</div>
-        </div>
-        
-        <div>
-          <div style="font-size:1.3rem; font-weight:800; color:var(--accent); margin-bottom: 8px; text-align: right;">
-            ${price} P
-          </div>
-          
-          <div style="display:flex; gap:8px; margin-bottom: 12px;">
-            <button onclick="showOnlyOneStock('${st.name}')" style="flex:1; padding:6px; font-size:0.8rem; background:white; border:1px solid var(--border); border-radius:4px; cursor:pointer;">
-              📈 이 차트만
-            </button>
-            <button onclick="showAllStocks()" style="flex:1; padding:6px; font-size:0.8rem; background:white; border:1px solid var(--border); border-radius:4px; cursor:pointer;">
-              🌐 전체 보기
-            </button>
-          </div>
-          <div class="row" style="margin:0; gap:8px;">
-            <input type="number" id="tradeQty_${st.id}" placeholder="수량" style="width:70px; padding:8px;" min="1" value="1" ${btnDisabled} />
-            <button onclick="tradeStock(${st.id}, 'buy', ${price}, '${st.name}')" ${btnDisabled} style="background:${buyColor}; flex:1; padding:8px; color:white; border:none; border-radius:4px;">매수</button>
-            <button onclick="tradeStock(${st.id}, 'sell', ${price}, '${st.name}')" ${btnDisabled} style="background:${sellColor}; flex:1; padding:8px; color:white; border:none; border-radius:4px;">매도</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-}
+        `;
+      }
+    }
 
-// =========================================================
-// 🎯 특정 주식 차트만 보기 / 전체 보기 함수 (새로 추가됨 ✨)
-// =========================================================
-function showOnlyOneStock(stockName) {
-  if (!window.myStockChart) return;
-  
-  window.myStockChart.data.datasets.forEach(dataset => {
-    // 클릭한 종목 이름과 같으면 보이게(hidden: false), 다르면 숨기게(hidden: true)
-    dataset.hidden = (dataset.label !== stockName);
-  });
-  window.myStockChart.update();
-}
+    function showOnlyOneStock(stockName) {
+      if (!window.myStockChart) return;
+      window.myStockChart.data.datasets.forEach(dataset => {
+        dataset.hidden = (dataset.label !== stockName);
+      });
+      window.myStockChart.update();
+    }
 
-function showAllStocks() {
-  if (!window.myStockChart) return;
-  
-  window.myStockChart.data.datasets.forEach(dataset => {
-    dataset.hidden = false; // 모두 보이게
-  });
-  window.myStockChart.update();
-}
+    function showAllStocks() {
+      if (!window.myStockChart) return;
+      window.myStockChart.data.datasets.forEach(dataset => {
+        dataset.hidden = false;
+      });
+      window.myStockChart.update();
+    }
 
-// 🔒 주식 거래 중복 클릭 방지용 글로벌 자물쇠 변수
     let isStockTrading = false;
 
-    // [이 코드로 기존 tradeStock 함수를 교체해 주세요]
     async function tradeStock(stockId, side, price, stockName) {
-      if (isStockTrading) return; // 0. 이미 거래가 처리 중이면 뒤이은 클릭은 무조건 무시
+      if (isStockTrading) return; 
       if (!me) return alert("로그인 상태에서만 가능합니다.");
 
-      // 1. 거래 시작 즉시 자물쇠를 걸고, 화면의 모든 매수/매도 버튼을 비활성화
       isStockTrading = true;
       const buttons = document.querySelectorAll("#stockList button");
       buttons.forEach(btn => btn.disabled = true);
 
       try {
-        // ✨ [선생님의 소중한 기능] 장이 열려있는지 DB에서 최종 확인
         const { data: mState } = await sb.from("market_state").select("is_open").eq("id", 1).single();
         if (!mState || !mState.is_open) {
           alert("🛑 지금은 주식 거래 시간이 아닙니다! (장 마감)");
-          return; // finally 블록으로 이동하여 잠금이 해제됩니다.
+          return;
         }
 
         const qtyInput = document.getElementById(`tradeQty_${stockId}`);
         const qty = parseInt(qtyInput ? qtyInput.value : 1, 10);
-        if (!qty || qty <= 0) {
-          alert("올바른 수량을 기입해 주세요.");
-          return;
-        }
+        if (!qty || qty <= 0) return alert("올바른 수량을 기입해 주세요.");
 
         const total = price * qty;
 
-        // 🔍 [연타 버그 방지 핵심] 버튼을 누른 '찰나의 순간' DB에서 실시간으로 학생의 진짜 잔액을 재조회
-        const { data: dbUser } = await sb.from("students").select("balance").eq("id", me.id).single();
-        
-        // 🔍 보유 주식도 캐시(Map) 대신 DB에서 직접 실시간 최신 수량을 조회하여 꼬임 방지
         const { data: dbHold } = await sb.from("holdings").select("shares, avg_cost").eq("student_id", me.id).eq("stock_id", stockId).maybeSingle();
         let currentShares = dbHold ? dbHold.shares : 0;
         let currentAvgCost = dbHold ? dbHold.avg_cost : 0;
 
         if (side === "buy") {
-          if (dbUser.balance < total) {
-            alert(`잔액 부족 (내 잔액: ${dbUser.balance}P)`);
+          const { data: isSuccess, error: rpcError } = await sb.rpc('deduct_student_balance', {
+            target_student_id: me.id,
+            amount: total
+          });
+
+          if (rpcError || !isSuccess) {
+            alert(`잔액이 부족하거나 구매에 실패했습니다! (필요 금액: ${total}P)`);
             return;
           }
+
           const newShares = currentShares + qty;
           const newAvgCost = Math.floor(((currentShares * currentAvgCost) + total) / newShares);
           
-          await sb.from("students").update({ balance: dbUser.balance - total }).eq("id", me.id);
           await sb.from("holdings").upsert({ 
             student_id: me.id, 
             stock_id: stockId, 
@@ -1655,128 +1543,144 @@ function showAllStocks() {
             updated_at: new Date().toISOString() 
           });
           await sb.from("ledger").insert({ student_id: me.id, type: "trade_buy", amount: -total, memo: `[매수] ${stockName} ${qty}주` });
-          alert(`성공! ${stockName} ${qty}주 인수!`);
+          alert(`🎉 성공! ${stockName} ${qty}주 인수!`);
 
         } else {
           if (currentShares < qty) {
-            alert(`보유 주식 수량 부족`);
+            alert(`보유 주식 수량이 부족합니다.`);
             return;
           }
           const newShares = currentShares - qty;
           
+          const { data: dbUser } = await sb.from("students").select("balance").eq("id", me.id).single();
           await sb.from("students").update({ balance: dbUser.balance + total }).eq("id", me.id);
+
           if (newShares === 0) {
             await sb.from("holdings").delete().eq("student_id", me.id).eq("stock_id", stockId);
           } else {
             await sb.from("holdings").update({ shares: newShares }).eq("student_id", me.id).eq("stock_id", stockId);
           }
           await sb.from("ledger").insert({ student_id: me.id, type: "trade_sell", amount: total, memo: `[매도] ${stockName} ${qty}주` });
-          alert(`${stockName} ${qty}주를 판매해 ${total}P 획득!`);
+          alert(`📈 ${stockName} ${qty}주를 판매해 ${total}P 획득!`);
         }
         
-        // 🔄 화면 일괄 업데이트
         await refreshStudent();
-        if (typeof refreshStockMarket === "function") {
-          await refreshStockMarket(); // 바둑판 UI 화면도 최신 데이터로 리프레시
-        }
+        if (typeof refreshStockMarket === "function") await refreshStockMarket();
 
       } catch (err) { 
         alert(err.message); 
       } finally { 
-        // 2. 모든 처리가 끝나면(성공하든 오류가 나든) 자물쇠를 풀고 버튼을 다시 활성화
         isStockTrading = false; 
         buttons.forEach(btn => btn.disabled = false);
       }
     }
 
-// =========================================================
-  // 🌐 실제 외부 주식 시장 자동 동기화 (시간 기록 버그 픽스)
-  // =========================================================
-  async function syncRealStockPrices() {
-    if (!confirm("실제 주식 시장의 최신 가격을 불러와 동기화하시겠습니까?\n(성공/실패 여부가 마지막에 리포트로 출력됩니다.)")) return;
+    async function syncRealStockPrices() {
+      if (!confirm("실제 주식 시장의 최신 가격을 불러와 동기화하시겠습니까?\n(성공/실패 여부가 마지막에 리포트로 출력됩니다.)")) return;
 
-    const syncBtn = window.event ? window.event.currentTarget : null;
-    let originalText = "";
-    if (syncBtn) {
-      originalText = syncBtn.innerHTML;
-      syncBtn.innerHTML = "⏳ 가격 동기화 중 (잠시만 기다려주세요)...";
-      syncBtn.disabled = true;
-    }
-
-    const successList = [];
-    const failList = [];
-
-    try {
-      const { data: stockList, error } = await sb.from('stocks').select('*');
-      if (error) throw error;
-      if (!stockList || stockList.length === 0) return alert("⚠️ 등록된 주식 종목이 없습니다.");
-
-      for (let s of stockList) {
-        if (!s.ticker || s.ticker.trim() === '') {
-          failList.push(`• ${s.name} (이유: 티커 기호 누락 ❌)`);
-          continue;
-        }
-
-        try {
-          const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${s.ticker.trim()}`;
-          const proxies = [
-            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
-          ];
-
-          let yahooData = null;
-          for (let proxy of proxies) {
-            try {
-              const response = await fetch(proxy);
-              if (response.ok) { yahooData = await response.json(); break; }
-            } catch (e) { console.warn(`[${s.name}] 지연...`); }
-          }
-
-          if (!yahooData || !yahooData.chart || !yahooData.chart.result) {
-            failList.push(`• ${s.name} (이유: 우회 서버 차단 또는 야후 통신 오류 ❌)`);
-            continue; 
-          }
-
-          const realMarketPrice = yahooData.chart.result[0].meta.regularMarketPrice; 
-          const divideRatio = Number(s.divider) || 1;
-          const currentPrice = Math.max(1, Math.round(realMarketPrice / divideRatio)); 
-          const oldPrice = latestPriceMap.get(s.id) || 0;
-          
-          if (currentPrice > 0 && currentPrice !== oldPrice) {
-            await sb.from('stock_prices').insert([{ 
-              stock_id: s.id, 
-              price: currentPrice,
-              note: `실제 연동 (1/${divideRatio} 적용)`,
-              effective_at: new Date().toISOString() // ✨ [핵심 수정] 동기화 시점의 시간 추가!
-            }]);
-            successList.push(`• ${s.name} ➡️ ${currentPrice} P (변경됨)`);
-          } else {
-            successList.push(`• ${s.name} ➡️ ${currentPrice} P (유지됨)`);
-          }
-        } catch (fetchErr) {
-          failList.push(`• ${s.name} (에러발생)`);
-        }
+      const syncBtn = window.event ? window.event.currentTarget : null;
+      let originalText = "";
+      if (syncBtn) {
+        originalText = syncBtn.innerHTML;
+        syncBtn.innerHTML = "⏳ 가격 동기화 중 (잠시만 기다려주세요)...";
+        syncBtn.disabled = true;
       }
 
-      let reportMsg = "📊 [실시간 주가 동기화 결과 리포트]\n\n";
-      reportMsg += successList.length > 0 ? "✅ 성공 종목:\n" + successList.join("\n") + "\n\n" : "✅ 성공 종목: 없음\n\n";
-      reportMsg += failList.length > 0 ? "⚠️ 실패 종목:\n" + failList.join("\n") : "🎉 축하합니다! 모든 종목이 동기화되었습니다.";
-      
-      alert(reportMsg);
+      const successList = [];
+      const failList = [];
 
-      await refreshStockMarket(); 
-      if (typeof drawStockChart === "function") drawStockChart();
-      if (typeof loadDropdownsForStockManager === "function") loadDropdownsForStockManager();
-      
-    } catch (err) {
-      alert("주가 동기화 중 오류가 발생했습니다: " + err.message);
-    } finally {
-      if (syncBtn) { syncBtn.innerHTML = originalText; syncBtn.disabled = false; }
+      try {
+        const { data: stockList, error } = await sb.from('stocks').select('*');
+        if (error) throw error;
+        if (!stockList || stockList.length === 0) return alert("⚠️ 등록된 주식 종목이 없습니다.");
+
+        for (let s of stockList) {
+          if (!s.ticker || s.ticker.trim() === '') {
+            failList.push(`• ${s.name} (이유: 티커 기호 누락 ❌)`);
+            continue;
+          }
+
+          try {
+            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${s.ticker.trim()}`;
+            const proxies = [
+              `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+              `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+              `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+            ];
+
+            let yahooData = null;
+            for (let proxy of proxies) {
+              try {
+                const response = await fetch(proxy);
+                if (response.ok) { yahooData = await response.json(); break; }
+              } catch (e) { console.warn(`[${s.name}] 지연...`); }
+            }
+
+            if (!yahooData || !yahooData.chart || !yahooData.chart.result) {
+              failList.push(`• ${s.name} (이유: 우회 서버 차단 또는 야후 통신 오류 ❌)`);
+              continue; 
+            }
+
+            const realMarketPrice = yahooData.chart.result[0].meta.regularMarketPrice; 
+            const divideRatio = Number(s.divider) || 1;
+            const currentPrice = Math.max(1, Math.round(realMarketPrice / divideRatio)); 
+            const oldPrice = latestPriceMap.get(s.id) || 0;
+            
+            if (currentPrice > 0 && currentPrice !== oldPrice) {
+              await sb.from('stock_prices').insert([{ 
+                stock_id: s.id, 
+                price: currentPrice,
+                note: `실제 연동 (1/${divideRatio} 적용)`,
+                effective_at: new Date().toISOString()
+              }]);
+              successList.push(`• ${s.name} ➡️ ${currentPrice} P (변경됨)`);
+            } else {
+              successList.push(`• ${s.name} ➡️ ${currentPrice} P (유지됨)`);
+            }
+          } catch (fetchErr) {
+            failList.push(`• ${s.name} (에러발생)`);
+          }
+        }
+
+        let reportMsg = "📊 [실시간 주가 동기화 결과 리포트]\n\n";
+        reportMsg += successList.length > 0 ? "✅ 성공 종목:\n" + successList.join("\n") + "\n\n" : "✅ 성공 종목: 없음\n\n";
+        reportMsg += failList.length > 0 ? "⚠️ 실패 종목:\n" + failList.join("\n") : "🎉 축하합니다! 모든 종목이 동기화되었습니다.";
+        
+        alert(reportMsg);
+
+        await refreshStockMarket(); 
+        if (typeof drawStockChart === "function") drawStockChart();
+        if (typeof loadDropdownsForStockManager === "function") loadDropdownsForStockManager();
+        
+      } catch (err) {
+        alert("주가 동기화 중 오류가 발생했습니다: " + err.message);
+      } finally {
+        if (syncBtn) { syncBtn.innerHTML = originalText; syncBtn.disabled = false; }
+      }
     }
+
+async function updateStockDivider() {
+  if (!sb) return;
+  const stockId = prompt("비율(Divider)을 변경할 주식의 종목 ID 번호를 입력하세요:");
+  if (!stockId) return;
+  
+  const dividerStr = prompt("새로운 주가 비율 Divider 숫자를 입력하세요 (기본값: 1):", "1");
+  if (!dividerStr || isNaN(parseInt(dividerStr, 10)) || parseInt(dividerStr, 10) < 1) {
+    return alert("올바른 1 이상의 숫자를 입력해 주세요.");
   }
+  
+  try {
+    const { error } = await sb.from("stocks").update({ divider: parseInt(dividerStr, 10) }).eq("id", stockId);
+    if (error) throw error;
+    alert("✅ 종목별 비율(Divider)이 성공적으로 변경되었습니다!");
+    if (typeof loadDropdownsForStockManager === "function") await loadDropdownsForStockManager();
+  } catch (err) {
+    alert("비율 변경 중 오류 발생: " + err.message);
+  }
+}
+
     // =========================================================
-    // 🎟️ 교사 모드: 쿠폰 관리 세팅
+    // 🎟️ 쿠폰 관리 (교사/학생)
     // =========================================================
     async function loadDropdownsForCouponManager() {
       if (!sb) return;
@@ -1797,15 +1701,11 @@ function showAllStocks() {
         giveCouponSelect.innerHTML = '<option value="">쿠폰 선택...</option>';
         allCoupons?.forEach(c => giveCouponSelect.innerHTML += `<option value="${c.id}">${c.title} (${c.price}P)</option>`);
       }
-await loadAdminCoupons();
+      await loadAdminCoupons();
     }
 
-// 📝 [관리자용] 쿠폰 가격 수정 함수
     async function editCouponPrice(couponId, currentPrice, couponTitle) {
-      // 1. 선생님께 새로운 가격을 입력받습니다.
       const newPriceStr = prompt(`'${couponTitle}' 쿠폰의 새로운 가격을 입력하세요.\n(현재 가격: ${currentPrice}P)`, currentPrice);
-      
-      // 취소를 누르거나 아무것도 입력하지 않으면 종료
       if (newPriceStr === null || newPriceStr.trim() === "") return; 
 
       const newPrice = parseInt(newPriceStr, 10);
@@ -1814,25 +1714,17 @@ await loadAdminCoupons();
       }
 
       try {
-        // 2. Supabase DB의 coupons 테이블에서 해당 쿠폰의 가격(price)을 업데이트합니다.
         const { error } = await sb.from("coupons").update({ price: newPrice }).eq("id", couponId);
         if (error) throw error;
 
         alert(`✅ '${couponTitle}'의 가격이 ${newPrice}P로 성공적으로 수정되었습니다!`);
-        
-        // 3. 변경된 가격을 교사 화면에 즉시 다시 그려줍니다.
-        if (typeof refreshAdminCoupons === "function") {
-          await refreshAdminCoupons();
-        } else if (typeof loadAdminCoupons === "function") {
-          await loadAdminCoupons();
-        }
+        if (typeof loadAdminCoupons === "function") await loadAdminCoupons();
       } catch (err) {
         console.error("쿠폰 가격 수정 중 오류:", err);
         alert("가격 수정 중 오류가 발생했습니다.");
       }
     }
 
-// 📋 [관리자용] 전체 쿠폰 목록을 표(Table)로 그려주는 함수
     async function loadAdminCoupons() {
       if (!sb) return;
       const container = document.getElementById("adminCouponListContainer");
@@ -1874,7 +1766,7 @@ await loadAdminCoupons();
               <td style="padding: 8px 10px;">${statusBadge}</td>
               <td style="padding: 8px 10px; text-align: center;">
                 <button onclick="editCouponPrice(${c.id}, ${c.price}, '${c.title}')" style="background: #eab308; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px;">가격 수정</button>
-<button onclick="deleteCoupon(${c.id}, '${c.title}')" style="background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">삭제</button>
+                <button onclick="deleteCoupon(${c.id}, '${c.title}')" style="background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">삭제</button>
               </td>
             </tr>
           `;
@@ -1888,7 +1780,7 @@ await loadAdminCoupons();
         container.innerHTML = `<span style="color: red;">쿠폰 목록을 불러오는 중 오류가 발생했습니다.</span>`;
       }
     }
-// ✨ [관리자용] 새로운 쿠폰 생성 함수
+
     async function createNewCoupon() {
       const title = document.getElementById("tNewCouponTitle").value.trim();
       const desc = document.getElementById("tNewCouponDesc").value.trim();
@@ -1910,13 +1802,10 @@ await loadAdminCoupons();
         if (error) throw error;
 
         alert(`✅ '${title}' 쿠폰이 상점에 새로 등록되었습니다!`);
-        
-        // 입력창 깨끗하게 비우기
         document.getElementById("tNewCouponTitle").value = "";
         document.getElementById("tNewCouponDesc").value = "";
         document.getElementById("tNewCouponPrice").value = "";
 
-        // 선생님 화면(표와 드롭다운) 즉시 새로고침
         if (typeof loadAdminCoupons === "function") await loadAdminCoupons();
         if (typeof loadDropdownsForCouponManager === "function") await loadDropdownsForCouponManager();
 
@@ -1926,18 +1815,15 @@ await loadAdminCoupons();
       }
     }
 
-    // 🗑️ [관리자용] 쿠폰 삭제 (또는 숨김) 함수
     async function deleteCoupon(couponId, couponTitle) {
       if (!confirm(`정말로 '${couponTitle}' 쿠폰을 상점에서 삭제하시겠습니까?\n(이미 학생들이 구매해서 가지고 있는 쿠폰은 사라지지 않습니다.)`)) {
         return;
       }
 
       try {
-        // 1차: 완전 삭제 시도
         const { error } = await sb.from("coupons").delete().eq("id", couponId);
         
         if (error) {
-          // DB 구조상 예전 기록 때문에 완전 삭제가 안 되면 상태를 '숨김(false)'으로 바꿉니다.
           const { error: hideError } = await sb.from("coupons").update({ is_active: false }).eq("id", couponId);
           if (hideError) throw hideError;
           alert(`✅ '${couponTitle}' 쿠폰이 이전에 거래된 기록이 있어, 상점에서 '판매 중지(숨김)' 처리되었습니다.`);
@@ -1945,7 +1831,6 @@ await loadAdminCoupons();
           alert(`🗑️ '${couponTitle}' 쿠폰이 완전히 삭제되었습니다.`);
         }
 
-        // 선생님 화면(표와 드롭다운) 즉시 새로고침
         if (typeof loadAdminCoupons === "function") await loadAdminCoupons();
         if (typeof loadDropdownsForCouponManager === "function") await loadDropdownsForCouponManager();
 
@@ -1956,7 +1841,7 @@ await loadAdminCoupons();
     }
 
     // =========================================================
-    // 🏛️ 기타 필수 로직 (공동기금, 장부, 잡다한 UI 관리)
+    // 🏛️ 용돈기입장 및 공동기금
     // =========================================================
     async function loadMyLedger() {
       if (!me) return;
@@ -1971,7 +1856,8 @@ await loadAdminCoupons();
     }
     
     async function refreshTreasuryUI() {
-      if (!sb) return; const { data } = await sb.from("treasury").select("balance").eq("id", 1).maybeSingle();
+      if (!sb) return; 
+      const { data } = await sb.from("treasury").select("balance").eq("id", 1).maybeSingle();
       if(document.getElementById("treasuryBalance")) document.getElementById("treasuryBalance").textContent = data ? data.balance : 0;
     }
 
@@ -1990,9 +1876,7 @@ await loadAdminCoupons();
         document.getElementById("teaTreasuryAmount").value = ""; refreshTreasuryUI();
       } catch (e) { alert("금고 조작 에러: " + e.message); }
     }
-// =========================================================
-    // 🎫 쿠폰 상점 & 내 쿠폰 로직 (학생용)
-    // =========================================================
+
     async function loadCoupons() {
       if (!sb) return;
       const { data: coupons } = await sb.from("coupons").select("*").eq("is_active", true).order("price");
@@ -2022,20 +1906,18 @@ await loadAdminCoupons();
       }
     }
 
-async function loadMyStocks() {
+    async function loadMyStocks() {
       const container = document.getElementById("myStockList"); 
       if (!container || !me) return;
 
       try {
-        // ✨ [핵심 수정] 뒤에 .gt("shares", 0) 을 추가해서 수량이 0보다 큰 것만 가져옵니다!
         const { data: myHoldings, error: hError } = await sb.from("holdings")
           .select("*, stocks(name)")
           .eq("student_id", me.id)
-          .gt("shares", 0); // <-- 요기가 비법입니다!
+          .gt("shares", 0);
 
         if (hError) throw hError;
 
-        // 보유한 주식이 없거나 모두 팔아서 0개일 때의 화면 (선생님의 예쁜 '텅~' UI 적용)
         if (!myHoldings || myHoldings.length === 0) {
           container.innerHTML = `
             <div style="text-align: center; padding: 30px 10px; color: var(--muted); background: #fff; border-radius: 8px; border: 1px solid #bfdbfe;">
@@ -2048,16 +1930,13 @@ async function loadMyStocks() {
         container.innerHTML = "⏳ 실시간 손익 계산 중...";
         let htmlContent = "";
 
-        // 학생이 가진 주식들을 하나씩 돌면서 시세 비교
         for (const h of myHoldings) {
           const stockInfo = h.stocks;
           if (!stockInfo) continue;
           
           const qty = h.shares;
-          // (혹시 모를 에러 방지용 안전장치) 수량이 0 이하면 건너뜁니다.
           if (qty <= 0) continue;
 
-          // 최신 시세 불러오기
           const { data: latestPriceRow } = await sb.from("stock_prices")
             .select("price")
             .eq("stock_id", h.stock_id)
@@ -2069,24 +1948,21 @@ async function loadMyStocks() {
           const avgCost = h.avg_cost || 0;
           const currentPrice = latestPriceRow ? latestPriceRow.price : avgCost; 
 
-          // 🧮 손익 계산
           const totalInvested = avgCost * qty;                 
           const totalCurrentValue = currentPrice * qty;        
           const profitLoss = totalCurrentValue - totalInvested;   
           const profitRate = totalInvested > 0 ? ((profitLoss / totalInvested) * 100).toFixed(2) : "0.00";
 
-          // 🎨 색상 지정
           let color = "#334155"; 
           let prefix = "";
           
           if (profitLoss > 0) {
-            color = "#dc2626"; // 이득 (빨강)
+            color = "#dc2626";
             prefix = "+";
           } else if (profitLoss < 0) {
-            color = "#2563eb"; // 손해 (파랑)
+            color = "#2563eb";
           }
 
-          // HTML 그리기
           htmlContent += `
             <div style="background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -2119,19 +1995,15 @@ async function loadMyStocks() {
       }
     }
 
-// =========================================================
-    // 🎫 [버그 수정 완료] 내 쿠폰 로직 (학생용)
-    // =========================================================
     async function loadMyCoupons() {
       const container = document.getElementById("myCouponList");
       if (!container || !me) return;
 
       try {
-        // ✨ [수정] 학생 화면에서도 수량이 0보다 많은(진짜 보유한) 쿠폰만 정밀 조회합니다.
         const { data: myCoupons, error } = await sb.from("student_coupons")
           .select("*, coupons(title)")
           .eq("student_id", me.id)
-          .gt("quantity", 0); // 👈 0개짜리는 가져오지 않도록 필터 추가
+          .gt("quantity", 0);
 
         if (error) throw error;
 
@@ -2144,8 +2016,6 @@ async function loadMyStocks() {
         myCoupons.forEach(c => {
           const couponInfo = c.coupons || c.coupon;
           const title = couponInfo?.title || "알 수 없는 쿠폰";
-          
-          // ✨ [수정] || 1 때문에 0이 1로 둔갑하던 버그를 안전하게 수정했습니다.
           const qty = (c.quantity !== undefined && c.quantity !== null) ? c.quantity : 0; 
 
           container.innerHTML += `
@@ -2160,12 +2030,9 @@ async function loadMyStocks() {
       }
     }
 
-
-// 화면(HTML)의 버튼과 딱 맞게 (쿠폰ID, 가격, 제목) 3개를 받도록 수정했습니다.
     async function buyCoupon(couponId, price, title) {
       if (!me) return alert("먼저 로그인하세요.");
 
-      // 🛡️ 1. 클릭한 구매 버튼 찾아서 잠그기 (연타 방지)
       const btn = window.event ? window.event.currentTarget : null;
       let originalText = "";
       if (btn) {
@@ -2175,65 +2042,49 @@ async function loadMyStocks() {
       }
 
       try {
-        // ✨ [핵심 원인 해결] 넘어온 가격이 정확히 숫자인지 한 번 더 확인합니다.
         const couponPrice = Number(price);
-        if (isNaN(couponPrice)) {
-            alert("쿠폰 가격 정보가 잘못되었습니다.");
-            return;
-        }
+        if (isNaN(couponPrice)) return alert("쿠폰 가격 정보가 잘못되었습니다.");
 
-        // VAT_RATE(부가세율)가 혹시 다른 파일에 있을 수 있으니 안전하게 처리 (없으면 5% 적용)
         const currentVatRate = typeof VAT_RATE !== "undefined" ? VAT_RATE : 0.05;
         const vat = Math.floor(couponPrice * currentVatRate);
         const total = couponPrice + vat;
 
-        if (me.balance < total) return alert(`포인트가 부족해요! (필요: ${total}P)`);
+        const { data: isSuccess, error: rpcError } = await sb.rpc('deduct_student_balance', {
+          target_student_id: me.id,
+          amount: total
+        });
 
-        const newBal = me.balance - total;
-        
-        // 데이터베이스 잔액 업데이트 (이제 NaN 에러가 발생하지 않습니다!)
-        const { error: e1 } = await sb.from("students").update({ balance: newBal }).eq("id", me.id);
-        if (e1) {
-            console.error("잔액 업데이트 에러 상세:", e1); // 혹시 또 에러가 나면 F12(콘솔)에서 원인을 바로 볼 수 있습니다.
-            return alert("구매 실패(잔액 업데이트 오류)");
+        if (rpcError) {
+          console.error("RPC Error:", rpcError);
+          return alert("구매 처리 중 오류가 발생했습니다.");
         }
 
-        const { error: e2 } = await sb.from("ledger").insert({
+        if (!isSuccess) {
+          return alert(`포인트가 부족해요! (필요 포인트: ${total}P)`);
+        }
+
+        await sb.from("ledger").insert({
           student_id: me.id,
           type: "spend",
           amount: -couponPrice,
           memo: `쿠폰 구매: ${title}`,
           coupon_id: couponId
         });
-        if (e2) return alert("구매 실패(기록 오류)");
 
         if (vat > 0) {
-          const { error: e3 } = await sb.from("ledger").insert({
+          await sb.from("ledger").insert({
             student_id: me.id,
             type: "tax",
             amount: -vat,
             memo: `부가세(${currentVatRate * 100}%): ${title}`,
             coupon_id: couponId
           });
-          if (e3) return alert("구매 실패(세금 기록 오류)");
 
-          try {
-            // 공동기금(국고) 적립 로직 (기존 2번 질문의 로직을 안전하게 병합)
-            if (typeof addTreasury === "function") {
-                await addTreasury(vat, `부가세 적립: ${title}`);
-            } else {
-                const { data: tr } = await sb.from("treasury").select("balance").eq("id", 1).maybeSingle();
-                const curTr = tr ? tr.balance : 0;
-                await sb.from("treasury").upsert({ id: 1, balance: curTr + vat, updated_at: new Date().toISOString() });
-            }
-          } catch (err) {
-            console.warn("경고: 공동기금 적립 실패", err);
-          }
+          const { data: tr } = await sb.from("treasury").select("balance").eq("id", 1).maybeSingle();
+          const curTr = tr ? tr.balance : 0;
+          await sb.from("treasury").upsert({ id: 1, balance: curTr + vat, updated_at: new Date().toISOString() });
         }
 
-        // =========================================================
-        // 🎒 내 지갑(student_coupons)에 구매한 쿠폰 넣어주기! (수량 증가 방식)
-        // =========================================================
         const { data: existing } = await sb.from("student_coupons")
           .select("id, quantity")
           .eq("student_id", me.id)
@@ -2249,11 +2100,10 @@ async function loadMyStocks() {
             quantity: 1
           });
         }
-        // =========================================================
 
-        await refreshStudent(); // 지갑 잔액 새로고침
-        await loadMyCoupons();  // 내 보유 쿠폰 목록 즉시 새로고침
-        alert(`'${title}' 구매 완료!`);
+        await refreshStudent();
+        await loadMyCoupons();
+        alert(`🎉 '${title}' 구매 완료!`);
 
       } catch (err) {
         console.error(err);
@@ -2266,11 +2116,10 @@ async function loadMyStocks() {
       }
     }
 
-// =========================================================
-    // 🎁 교사 모드: 쿠폰 지급 및 사용 처리 이벤트 연결 (수량 방식 적용)
+    // =========================================================
+    // 🎁 교사 쿠폰 및 직업 발령 이벤트
     // =========================================================
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. 교사 - 학생 쿠폰 사용(회수) 관리
       const tManageCouponStudent = document.getElementById("tManageCouponStudent");
       const tManageCouponList = document.getElementById("tManageCouponList");
       const btnUseCoupon = document.getElementById("btnUseCoupon");
@@ -2284,7 +2133,6 @@ async function loadMyStocks() {
             return;
           }
           
-          // ✨ [수정] 존재하지 않는 is_used 대신, 수량이 0개보다 많은(.gt("quantity", 0)) 쿠폰을 조회합니다.
           const { data, error } = await sb.from("student_coupons")
             .select("id, quantity, coupons(title)")
             .eq("student_id", sid)
@@ -2301,7 +2149,6 @@ async function loadMyStocks() {
             data.forEach(c => {
               const couponInfo = c.coupons || c.coupon;
               if (couponInfo) {
-                // 🎟️ 선택창에 현재 학생이 몇 개 가지고 있는지도 친절하게 띄워줍니다.
                 tManageCouponList.innerHTML += `<option value="${c.id}">${couponInfo.title} (보유: ${c.quantity}개)</option>`;
               }
             });
@@ -2313,13 +2160,12 @@ async function loadMyStocks() {
 
       if (btnUseCoupon) {
         btnUseCoupon.addEventListener("click", async () => {
-          const scId = tManageCouponList.value; // student_coupons 테이블의 id
+          const scId = tManageCouponList.value;
           if (!scId) return alert("사용 처리할 쿠폰을 선택하세요.");
           if (!confirm("해당 쿠폰을 1장 사용(회수) 처리하시겠습니까?")) return;
           
           btnUseCoupon.disabled = true;
           try {
-            // ✨ [수정] 바로 true로 바꾸는 게 아니라, 현재 수량이 몇 개인지 먼저 확인합니다.
             const { data: current, error: fetchErr } = await sb.from("student_coupons")
               .select("quantity")
               .eq("id", scId)
@@ -2328,16 +2174,14 @@ async function loadMyStocks() {
             if (fetchErr) throw fetchErr;
 
             if (current && current.quantity > 0) {
-              // 수량을 1개 깎아서 업데이트합니다.
               const newQty = current.quantity - 1;
               await sb.from("student_coupons").update({ quantity: newQty }).eq("id", scId);
-              
               alert("쿠폰 1장 사용(회수) 처리가 완료되었습니다.");
             } else {
               alert("회수할 쿠폰 수량이 부족합니다.");
             }
             
-            tManageCouponStudent.dispatchEvent(new Event("change")); // 목록 새로고침
+            tManageCouponStudent.dispatchEvent(new Event("change"));
           } catch(err) { 
             alert("오류: " + err.message); 
           } finally { 
@@ -2346,7 +2190,6 @@ async function loadMyStocks() {
         });
       }
 
-      // 2. 교사 - 쿠폰 강제 지급
       const btnGiveCoupon = document.getElementById("btnGiveCoupon");
       if (btnGiveCoupon) {
         btnGiveCoupon.addEventListener("click", async () => {
@@ -2358,7 +2201,6 @@ async function loadMyStocks() {
           
           btnGiveCoupon.disabled = true;
           try {
-            // ✨ [수정] 여러 줄을 insert하는 게 아니라, 이미 가지고 있다면 수량만 더해줍니다. (학생 구매 로직과 싱크 매칭)
             const { data: existing } = await sb.from("student_coupons")
               .select("id, quantity")
               .eq("student_id", sid)
@@ -2366,10 +2208,8 @@ async function loadMyStocks() {
               .maybeSingle();
 
             if (existing) {
-              // 이미 해당 쿠폰 칸이 있으면 기존 수량 + 입력한 수량
               await sb.from("student_coupons").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
             } else {
-              // 아예 처음 받는 쿠폰이면 새로 추가
               await sb.from("student_coupons").insert({
                 student_id: sid,
                 coupon_id: cid,
@@ -2377,13 +2217,11 @@ async function loadMyStocks() {
               });
             }
 
-            // 원본 기록 보존
             await sb.from("ledger").insert({ student_id: sid, type: "adjust", amount: 0, memo: `[교사 쿠폰 특별 지급] 수량 ${qty}장` });
             alert(`해당 학생에게 쿠폰 ${qty}장을 성공적으로 특별 지급했습니다!`);
             
-            // 혹시 회수 관리 쪽에 같은 학생이 선택되어 있다면 목록 새로고침 해주는 센스
             if (tManageCouponStudent && tManageCouponStudent.value === sid) {
-                tManageCouponStudent.dispatchEvent(new Event("change"));
+              tManageCouponStudent.dispatchEvent(new Event("change"));
             }
           } catch(err) { 
             alert("지급 오류: " + err.message); 
@@ -2394,11 +2232,8 @@ async function loadMyStocks() {
       }
     });
 
-    // [새로 추가된 함수] 교사 비밀번호 변경 로직
-    // [업그레이드] 교사 비밀번호를 변경하여 Supabase DB에 실시간 저장하는 로직
     async function changeTeacherPin() {
       try {
-        // 1. 현재 저장되어 있는 비밀번호를 DB에서 먼저 조회하여 검증
         const { data, error: fetchError } = await sb
           .from('teacher_config')
           .select('value')
@@ -2412,45 +2247,38 @@ async function loadMyStocks() {
         
         if (oldPin === savedPin) {
           const newPin = prompt("새로운 교사 비밀번호를 입력하세요 (숫자/문자 모두 가능):");
-          
-          // 예외 처리: 공백이나 아무것도 입력하지 않았을 때 처리 방지
           if (!newPin || newPin.trim() === "") {
             alert("❌ 비밀번호는 공백으로 설정할 수 없습니다.");
             return;
           }
           
-          // 2. Supabase DB에 새로운 비밀번호를 안전하게 업데이트
           const { error: updateError } = await sb
             .from('teacher_config')
             .update({ value: newPin.trim() })
             .eq('key', 'teacher_pin');
             
           if (updateError) throw updateError;
-          
-          alert("✅ 교사 관리자 비밀번호가 모든 컴퓨터 공통으로 안전하게 동기화되었습니다!");
+          alert("✅ 교사 관리자 비밀번호가 안전하게 동기화되었습니다!");
         } else {
           alert("❌ 현재 비밀번호가 일치하지 않습니다.");
         }
       } catch (err) {
         console.error("비밀번호 변경 오류:", err);
-        alert("⚠️ 비밀번호를 변경하는 도중 오류가 발생했습니다:\n" + err.message);
+        alert("⚠️ 비밀번호 변경 중 오류 발생:\n" + err.message);
       }
     }
-// [경우C 완벽 대응] 3개 테이블을 결합하여 일괄 관리 테이블을 그리는 함수
+
     async function loadJobAssignList() {
       try {
         const container = document.getElementById('job-assign-table-container');
         if (!container) return;
 
-        // 1. 학생 목록 가져오기 (출석번호 순)
         const { data: students, error: sErr } = await sb.from('students').select('*').order('student_no', { ascending: true });
         if (sErr) throw sErr;
 
-        // 2. 직업 목록 가져오기
         const { data: jobs, error: jErr } = await sb.from('jobs').select('*'); 
         if (jErr) throw jErr;
 
-        // 3. 학생-직업 매핑 테이블 가져오기 (✨새로 추가)
         const { data: studentJobs, error: sjErr } = await sb.from('student_jobs').select('*');
         if (sjErr) throw sjErr;
 
@@ -2468,12 +2296,8 @@ async function loadMyStocks() {
         `;
 
         students.forEach(st => {
-          // 💡 student_jobs 테이블에서 이 학생(st.id)에게 배정된 직업 행을 찾습니다.
-          // ※ 만약 student_jobs 테이블의 학생 고유ID 컬럼명이 student_id가 아니라면 sj.student_id 부분을 고쳐주세요.
           const relation = studentJobs.find(sj => String(sj.student_id) === String(st.id));
           const currentJobId = relation ? relation.job_id : null;
-
-          // 직업 ID를 바탕으로 진짜 직업 이름(name 또는 title) 알아내기
           const currentJob = jobs.find(j => String(j.id) === String(currentJobId));
           const currentJobName = currentJob ? (currentJob.name || currentJob.title) : "<span style='color:var(--muted);'>무직</span>";
 
@@ -2481,9 +2305,7 @@ async function loadMyStocks() {
             <tr style="border-bottom:1px solid var(--border);">
               <td style="padding:10px;">${st.student_no}</td>
               <td style="padding:10px; font-weight:bold;">${st.name}</td>
-              <td style="padding:10px; font-size:14px; color:var(--text);">
-                ${currentJobName}
-              </td>
+              <td style="padding:10px; font-size:14px; color:var(--text);">${currentJobName}</td>
               <td style="padding:10px;">
                 <select onchange="updateStudentJobDirectly('${st.id}', this.value)" style="padding:8px; border-radius:6px; border:1px solid var(--border); width: 100%; max-width: 250px;">
                   <option value="">-- 무직 --</option>
@@ -2511,53 +2333,36 @@ async function loadMyStocks() {
       }
     }
 
-    // [경우C 완벽 대응] student_jobs 테이블에 직업을 지우고 새로 입력하는 안전한 자동저장 함수
     async function updateStudentJobDirectly(studentId, jobId) {
       try {
-        // 1. 기존에 이 학생에게 배정되어 있던 직업 데이터를 student_jobs에서 삭제합니다.
-        const { error: delErr } = await sb
-          .from('student_jobs')
-          .delete()
-          .eq('student_id', studentId); // 💡 컬럼명 확인 필요!
-          
+        const { error: delErr } = await sb.from('student_jobs').delete().eq('student_id', studentId);
         if (delErr) throw delErr;
 
-        // 2. '-- 무직 --'을 고른 게 아니라, 진짜 새로운 직업(jobId)을 골랐다면 새로 입력합니다.
         if (jobId !== "") {
-          const { error: insErr } = await sb
-            .from('student_jobs')
-            .insert({
-              student_id: studentId, // 💡 컬럼명 확인 필요!
-              job_id: jobId          // 💡 컬럼명 확인 필요!
-            });
-            
+          const { error: insErr } = await sb.from('student_jobs').insert({ student_id: studentId, job_id: jobId });
           if (insErr) throw insErr;
         }
         
-        console.log("✅ 직업 발령이 성공적으로 반영되었습니다.");
-        
-        // 3. 변경 완료 후, 옆 칸의 '현재 직업' 글자도 즉시 새로고침 되도록 테이블을 다시 그립니다.
         loadJobAssignList();
-        
       } catch (err) {
         console.error("직업 업데이트 오류:", err);
-        alert("⚠️ 직업 변경에 실패했습니다. student_jobs 테이블의 컬럼명을 확인해 주세요.");
+        alert("⚠️ 직업 변경에 실패했습니다.");
         loadJobAssignList();
       }
     }
-// =========================================================
-// 🔒 개인정보 처리 안내 모달 열기/닫기 로직
-// =========================================================
-document.getElementById('openPrivacy').addEventListener('click', function(e) {
-  e.preventDefault(); // 링크 클릭 시 페이지 위로 튕기는 현상 방지
-  document.getElementById('privacyModal').style.display = 'block';
-});
 
-document.getElementById('closePrivacy').addEventListener('click', function() {
-  document.getElementById('privacyModal').style.display = 'none';
-});
+
+    document.getElementById('openPrivacy').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('privacyModal').style.display = 'block';
+    });
+
+    document.getElementById('closePrivacy').addEventListener('click', function() {
+      document.getElementById('privacyModal').style.display = 'none';
+    });
   </script>
-<div id="teacher-pin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
+
+  <div id="teacher-pin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:var(--panel); padding:24px; border-radius:var(--radius); box-shadow:var(--shadow); width:320px; text-align:center;">
       <h3 id="teacher-pin-modal-title" style="margin-top:0; margin-bottom:8px; font-size:18px;">🔑 교사 인증</h3>
       <p id="teacher-pin-modal-msg" style="font-size:13px; color:var(--muted); margin-bottom:16px;">주위 학생들에게 보이지 않게 비밀번호를 입력하세요.</p>
@@ -2568,57 +2373,58 @@ document.getElementById('closePrivacy').addEventListener('click', function() {
       </div>
     </div>
   </div>
-<div id="privacyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; padding:16px;">
-  <div style="max-width:900px; margin:40px auto; background:#fff; border-radius:14px; border:1px solid #e7e7e7; box-shadow:0 8px 24px rgba(0,0,0,.15); overflow:hidden;">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee;">
-      <b>곰코노미 개인정보 처리 안내</b>
-      <button onclick="document.getElementById('privacyModal').style.display='none'" class="secondary" style="padding:8px 10px; border-radius:10px; border: 1px solid #ccc; background: #fff; cursor:pointer;">닫기</button>
-    </div>
 
-    <div style="padding:16px; max-height:70vh; overflow:auto; line-height:1.55;">
-      <p class="muted" style="margin-top:0;">
-        본 안내는 학교 수업(교실경제 활동) 운영을 위해 곰코노미에서 처리되는 개인정보 항목과 절차를 설명합니다.
-      </p>
+  <div id="privacyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; padding:16px;">
+    <div style="max-width:900px; margin:40px auto; background:#fff; border-radius:14px; border:1px solid #e7e7e7; box-shadow:0 8px 24px rgba(0,0,0,.15); overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee;">
+        <b>곰코노미 개인정보 처리 안내</b>
+        <button id="closePrivacy" class="secondary" style="padding:8px 10px; border-radius:10px; border: 1px solid #ccc; background: #fff; cursor:pointer;">닫기</button>
+      </div>
 
-      <h4 style="margin:14px 0 8px;">1. 최소 처리 원칙 준수</h4>
-      <ul style="margin:0 0 10px 18px;">
-        <li><b>수집 항목</b>: 학생 번호, PIN, (선택) 이름, 포인트/거래 등 학습활동 데이터</li>
-        <li><b>수집 목적</b>: 학생별 교실경제 활동 관리, 포인트·쿠폰·주식 거래 기록 제공, 교육적 피드백</li>
-        <li><b>보유 기간</b>: 해당 학년도 종료 시까지(종료 후 삭제 또는 익명화)</li>
-      </ul>
+      <div style="padding:16px; max-height:70vh; overflow:auto; line-height:1.55;">
+        <p class="muted" style="margin-top:0;">
+          본 안내는 학교 수업(교실경제 활동) 운영을 위해 곰코노미에서 처리되는 개인정보 항목과 절차를 설명합니다.
+        </p>
 
-      <h4 style="margin:14px 0 8px;">2. 개인정보 안전조치 의무</h4>
-      <ul style="margin:0 0 10px 18px;">
-        <li>HTTPS 통신 사용</li>
-        <li>교사 PIN 기반 관리자 기능 제한</li>
-        <li>식별정보 최소화(번호 중심 운영), 민감정보 미수집</li>
-        <li>학년도 종료 후 데이터 삭제 원칙</li>
-      </ul>
+        <h4 style="margin:14px 0 8px;">1. 최소 처리 원칙 준수</h4>
+        <ul style="margin:0 0 10px 18px;">
+          <li><b>수집 항목</b>: 학생 번호, PIN, (선택) 이름, 포인트/거래 등 학습활동 데이터</li>
+          <li><b>수집 목적</b>: 학생별 교실경제 활동 관리, 포인트·쿠폰·주식 거래 기록 제공, 교육적 피드백</li>
+          <li><b>보유 기간</b>: 해당 학년도 종료 시까지(종료 후 삭제 또는 익명화)</li>
+        </ul>
 
-      <h4 style="margin:14px 0 8px;">3. 열람·정정·삭제·처리정지 절차</h4>
-      <ul style="margin:0 0 10px 18px;">
-        <li>학생 및 법정대리인은 언제든 본인 정보의 열람/정정/삭제/처리정지를 요청할 수 있습니다.</li>
-        <li><b>요청 방법</b>: 담임교사에게 요청 → 교사가 관리자 화면에서 조치</li>
-      </ul>
+        <h4 style="margin:14px 0 8px;">2. 개인정보 안전조치 의무</h4>
+        <ul style="margin:0 0 10px 18px;">
+          <li>HTTPS 통신 사용</li>
+          <li>교사 PIN 기반 관리자 기능 제한</li>
+          <li>식별정보 최소화(번호 중심 운영), 민감정보 미수집</li>
+          <li>학년도 종료 후 데이터 삭제 원칙</li>
+        </ul>
 
-      <h4 style="margin:14px 0 8px;">4. 만 14세 미만 아동 보호</h4>
-      <ul style="margin:0 0 10px 18px;">
-        <li>학기 초 안내 및 (필요 시) 법정대리인 동의 절차를 진행합니다.</li>
-        <li>교육 목적 외 활용을 금지합니다.</li>
-      </ul>
+        <h4 style="margin:14px 0 8px;">3. 열람·정정·삭제·처리정지 절차</h4>
+        <ul style="margin:0 0 10px 18px;">
+          <li>학생 및 법정대리인은 언제든 본인 정보의 열람/정정/삭제/처리정지를 요청할 수 있습니다.</li>
+          <li><b>요청 방법</b>: 담임교사에게 요청 → 교사가 관리자 화면에서 조치</li>
+        </ul>
 
-      <h4 style="margin:14px 0 8px;">5. 보호책임자 / 제3자 제공 / 위탁</h4>
-      <ul style="margin:0 0 10px 18px;">
-        <li><b>보호책임자</b>: 담임교사(또는 운영교사) / 연락: gsy89@korea.kr </li>
-        <li><b>제3자 제공</b>: 원칙적으로 제공하지 않습니다.</li>
-        <li><b>위탁</b>: 데이터 저장 인프라로 Supabase 클라우드 서비스를 이용할 수 있습니다.</li>
-      </ul>
+        <h4 style="margin:14px 0 8px;">4. 만 14세 미만 아동 보호</h4>
+        <ul style="margin:0 0 10px 18px;">
+          <li>학기 초 안내 및 (필요 시) 법정대리인 동의 절차를 진행합니다.</li>
+          <li>교육 목적 외 활용을 금지합니다.</li>
+        </ul>
 
-      <p class="muted" style="margin-bottom:0;">
-        ※ 학교 실정에 맞게 보호책임자/연락처, 보유기간 등 일부 문구를 조정하여 사용하세요.
-      </p>
+        <h4 style="margin:14px 0 8px;">5. 보호책임자 / 제3자 제공 / 위탁</h4>
+        <ul style="margin:0 0 10px 18px;">
+          <li><b>보호책임자</b>: 담임교사(또는 운영교사) / 연락: gsy89@korea.kr </li>
+          <li><b>제3자 제공</b>: 원칙적으로 제공하지 않습니다.</li>
+          <li><b>위탁</b>: 데이터 저장 인프라로 Supabase 클라우드 서비스를 이용할 수 있습니다.</li>
+        </ul>
+
+        <p class="muted" style="margin-bottom:0;">
+          ※ 학교 실정에 맞게 보호책임자/연락처, 보유기간 등 일부 문구를 조정하여 사용하세요.
+        </p>
+      </div>
     </div>
   </div>
-</div>
 </body>
 </html>
