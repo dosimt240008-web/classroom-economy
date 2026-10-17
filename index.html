@@ -520,14 +520,21 @@
       switchView('login');
     };
 
-    // =========================================================
+// =========================================================
     // ⏱️ 예금 이자 카운트다운 타이머
     // =========================================================
+    let isClaimingInterest = false;
+
     function startInterestTimer() {
       if (interestTimerInterval) clearInterval(interestTimerInterval);
       
       function updateTimer() {
-        if(!me || !me.last_interest_date) return;
+        if (!me || !me.last_interest_date) {
+          const timerEl = document.getElementById("bank-interest-timer");
+          if (timerEl) timerEl.innerText = "기준일 설정 필요";
+          return;
+        }
+
         const lastDate = new Date(me.last_interest_date);
         const nextDate = new Date(lastDate.getTime() + (7 * 24 * 60 * 60 * 1000));
         const now = new Date();
@@ -536,8 +543,17 @@
         const timerEl = document.getElementById("bank-interest-timer");
         if (!timerEl) return;
 
+        // 7일 만기가 되었을 때
         if (diffMs <= 0) {
           timerEl.innerText = "이자 지급 진행 중...";
+          // 멈춰있지 않고 학생 대시보드를 새로고침하여 자동으로 이자를 받아옴
+          if (!isClaimingInterest) {
+            isClaimingInterest = true;
+            setTimeout(async () => {
+              await refreshStudent();
+              isClaimingInterest = false;
+            }, 1000);
+          }
           return;
         }
         
@@ -547,6 +563,7 @@
         const s = Math.floor((diffMs / 1000) % 60);
         timerEl.innerText = `${d}일 ${h}시간 ${m}분 ${s}초`;
       }
+
       updateTimer();
       interestTimerInterval = setInterval(updateTimer, 1000);
     }
@@ -574,20 +591,48 @@
           console.error("예금 이자율 조회 실패, 기본값(20%) 적용");
         }
 
-        const { data: interestEarned } = await sb.rpc('claim_weekly_interest', {
-          p_student_id: me.id,
-          p_deposit_rate: weeklyDepositRate
-        });
-
-        if (interestEarned && interestEarned > 0) {
-          currentDeposit += interestEarned; 
-          me.last_interest_date = new Date().toISOString(); 
-
-          await sb.from("ledger").insert({ student_id: me.id, type: "interest_earn", amount: interestEarned, memo: `[은행 복리 이자 정기 보상]` });
-          alert(`🎉 훌륭합니다! 정기 복리 이자 ${interestEarned}P가 통장에 입금되었습니다! 💰`);
+        // [개선된 이자 지급 로직]
+        let interestEarned = 0;
+        try {
+          const { data, error: rpcErr } = await sb.rpc('claim_weekly_interest', {
+            p_student_id: me.id,
+            p_deposit_rate: weeklyDepositRate
+          });
+          if (rpcErr) {
+            console.error("이자 지급 RPC 에러:", rpcErr);
+          } else {
+            interestEarned = data || 0;
+          }
+        } catch (e) {
+          console.error("RPC 호출 실패:", e);
         }
 
-        startInterestTimer(); 
+        const lastDate = me.last_interest_date ? new Date(me.last_interest_date) : null;
+        const now = new Date();
+        const isExpired = !lastDate || (now.getTime() - lastDate.getTime() >= 7 * 24 * 60 * 60 * 1000);
+
+        if (interestEarned > 0) {
+          currentDeposit += interestEarned; 
+          const nowIso = now.toISOString();
+          me.last_interest_date = nowIso; 
+
+          // DB에 수령 일시를 확실히 저장하여 영구 반영
+          await sb.from("students").update({ last_interest_date: nowIso }).eq("id", me.id);
+          await sb.from("ledger").insert({ 
+            student_id: me.id, 
+            type: "interest_earn", 
+            amount: interestEarned, 
+            memo: `[은행 복리 이자 정기 보상]` 
+          });
+          alert(`🎉 훌륭합니다! 정기 복리 이자 ${interestEarned}P가 통장에 입금되었습니다! 💰`);
+        } else if (isExpired) {
+          // 예금이 0원이거나 이자가 0P여도 7일이 지났다면 날짜를 리셋하여 갇히는 현상 방지
+          const nowIso = now.toISOString();
+          me.last_interest_date = nowIso;
+          await sb.from("students").update({ last_interest_date: nowIso }).eq("id", me.id);
+        }
+
+        startInterestTimer();
 
         document.getElementById("stuName").textContent = `${me.student_no}번 ${me.name}`;
         if(document.getElementById("currentBankDeposit")) document.getElementById("currentBankDeposit").textContent = currentDeposit;
