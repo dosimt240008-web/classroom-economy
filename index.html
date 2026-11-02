@@ -2480,11 +2480,13 @@
     </div>
   </div>
 
-  <div id="privacyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; padding:16px;">
+<!-- 바깥 어두운 배경을 클릭해도 닫히도록 onclick 추가 -->
+  <div id="privacyModal" onclick="if(event.target === this) this.style.display = 'none'" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; padding:16px;">
     <div style="max-width:900px; margin:40px auto; background:#fff; border-radius:14px; border:1px solid #e7e7e7; box-shadow:0 8px 24px rgba(0,0,0,.15); overflow:hidden;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee;">
         <b>곰코노미 개인정보 처리 안내</b>
-        <button id="closePrivacy" class="secondary" style="padding:8px 10px; border-radius:10px; border: 1px solid #ccc; background: #fff; cursor:pointer;">닫기</button>
+        <!-- onclick 속성을 직접 버튼에 지정하여 확실히 닫히도록 수정 -->
+        <button id="closePrivacy" onclick="document.getElementById('privacyModal').style.display = 'none'" class="secondary" style="padding:8px 10px; border-radius:10px; border: 1px solid #ccc; background: #fff; cursor:pointer;">닫기</button>
       </div>
 
       <div style="padding:16px; max-height:70vh; overflow:auto; line-height:1.55;">
